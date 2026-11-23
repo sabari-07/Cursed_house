@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Guard: scene and shader rules",
+      "trigger": "PreToolUse",
+      "description": "Before an edit to src/scenes or src/three, reminds the agent that firelight must not \"wave\" and that sound-matched visuals are driven by the audio clock. Silent for every other file.",
+      "matcher": "str_replace|fs_write|fs_append",
+      "action": {
+        "type": "command",
+        "command": "node .kiro/hooks/scripts/shader-guard.cjs",
+        "timeout": 10
+      }
+    }
+  ]
+}

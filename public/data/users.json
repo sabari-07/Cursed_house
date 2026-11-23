@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "players": [
+    {
+      "name": "The Caretaker",
+      "progress": { "version": 2, "level": 1, "stage": 4, "treasures": [], "bestTimes": { "L1S1": 96, "L1S2": 121, "L1S3": 150 }, "deaths": 7 }
+    },
+    {
+      "name": "Grandfather",
+      "progress": { "version": 2, "level": 1, "stage": 2, "treasures": [], "bestTimes": { "L1S1": 142 }, "deaths": 30 }
+    }
+  ]
+}

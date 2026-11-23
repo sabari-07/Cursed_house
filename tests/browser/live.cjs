@@ -1,0 +1,82 @@
+// The deployed site (LIVE_URL, default config/deploy/outputs.json): the API end to end
+// (sign up, wrong password, sign in, save progress, leaderboard, recovery reset),
+// then the real UI on the live site: sign up shows the recovery code, the account
+// works from a second browser, the leaderboard lists it. Test accounts are named live_<time>.
+const fs = require('fs'), path = require('path')
+const { launch, check, T } = require('./lib.cjs')
+const out = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'config', 'deploy', 'outputs.json'), 'utf8'))
+const SITE = process.env.LIVE_URL || out.site, API = out.api
+;(async () => {
+  const name = 'live_' + Date.now().toString(36).slice(-6)
+  const call = async (method, route, body, token) => {
+    const r = await fetch(API + route, { method, headers: { 'content-type': 'application/json', origin: SITE, ...(token ? { authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined })
+    return { status: r.status, cors: r.headers.get('access-control-allow-origin'), data: await r.json().catch(() => ({})) }
+  }
+  const up = await call('POST', '/signup', { name, password: 'lantern123' })
+  check(up.status === 201 && up.data.token && /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(up.data.recoveryCode), `API sign up ${name}: ${up.status}, recovery code ${up.data.recoveryCode}`)
+  check(up.cors === SITE, `CORS allows the site: ${up.cors}`)
+  const bad = await call('POST', '/signin', { name, password: 'wrong' })
+  check(bad.status === 401 && bad.data.error === 'BadCredentials', `wrong password refused: ${bad.status} ${bad.data.message}`)
+  const ghost = await call('POST', '/signin', { name: 'nobody_' + name, password: 'wrong' })
+  check(ghost.status === 401 && ghost.data.message === bad.data.message, 'an unknown name gets the same answer')
+  const dup = await call('POST', '/signup', { name: name.toUpperCase(), password: 'lantern123' })
+  check(dup.status === 409, `the same name in capitals is taken: ${dup.status}`)
+  const prog = { version: 2, level: 2, stage: 1, treasures: ['gold-watch'], bestTimes: { L1S1: 30 }, run: 0, levelTimes: { L1: 240 }, deaths: 1 }
+  const save = await call('PUT', '/progress', { progress: prog }, up.data.token)
+  check(save.status === 200 && save.data.account.progress.level === 2, `progress saved: level ${save.data.account?.progress.level}`)
+  const anon = await call('PUT', '/progress', { progress: prog })
+  check(anon.status === 401, `saving without a session is refused: ${anon.status}`)
+  const board = await call('GET', '/leaderboard')
+  const row = board.data.players?.find(p => p.name === name)
+  check(!!row && row.progress.levelTimes.L1 === 240 && !('hash' in row), `on the leaderboard (no secrets): ${JSON.stringify(row)}`)
+  const badReset = await call('POST', '/reset', { name, code: 'AAAA-BBBB-CCCC', password: 'newlamp99' })
+  check(badReset.status === 401, `reset with a wrong recovery code refused: ${badReset.status}`)
+  const reset = await call('POST', '/reset', { name, code: up.data.recoveryCode.toLowerCase(), password: 'newlamp99' })
+  check(reset.status === 200, `reset with the recovery code: ${reset.status}`)
+  check((await call('POST', '/signin', { name, password: 'lantern123' })).status === 401, 'the old password no longer works')
+  const inNew = await call('POST', '/signin', { name, password: 'newlamp99' })
+  check(inNew.status === 200 && inNew.data.account.progress.level === 2, 'the new password works, progress kept')
+  const outR = await call('POST', '/signout', {}, inNew.data.token)
+  check(outR.status === 200 && (await call('GET', '/me', null, inNew.data.token)).status === 401, 'signed out: the session no longer works')
+
+  // the real UI on the live site
+  const { browser, page, errs } = await launch()
+  await page.goto(SITE + '/?nointro', { waitUntil: 'load' })
+  const js = await page.evaluate(async () => { const s = [...document.scripts].map(x => x.src).filter(Boolean); let t = ''; for (const u of s) t += await (await fetch(u)).text(); return t })
+  check(!/AKIA[0-9A-Z]{16}/.test(js) && !js.includes('aws_secret'), 'no AWS keys in the site\'s JavaScript')
+  await page.waitForSelector('.landing-curtain.is-open', { timeout: 60000 })
+  const uiName = 'ui' + name.slice(4)
+  await page.click('.player-actions button:nth-child(2)')
+  await page.waitForSelector('.acct')
+  await page.fill('.acct input[autocomplete="username"]', uiName)
+  await page.fill('.acct input[name="password"]', 'password1')
+  await page.fill('.acct input[name="confirm"]', 'password1')
+  await page.click('.acct-go')
+  await page.waitForSelector('.acct-code-value', { timeout: 20000 })
+  const code = await page.textContent('.acct-code-value')
+  check(/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code), `sign-up on the site shows the recovery code once: ${code}`)
+  await page.screenshot({ path: `${T}live_code.jpg`, quality: 85 })
+  await page.click('.acct-code .acct-go:last-child')
+  await page.waitForSelector('.player-name')
+  check((await page.textContent('.player-name')) === uiName, 'signed in on the site')
+  // a second browser (another device): sign in, same account
+  const ctx2 = await browser.newContext({ viewport: { width: 1600, height: 900 } })
+  const p2 = await ctx2.newPage()
+  await p2.goto(SITE + '/?nointro', { waitUntil: 'load' })
+  await p2.waitForSelector('.landing-curtain.is-open', { timeout: 60000 })
+  await p2.click('.player-actions button:first-child')
+  await p2.fill('.acct input[autocomplete="username"]', uiName.toUpperCase())
+  await p2.fill('.acct input[name="password"]', 'password1')
+  await p2.click('.acct-go')
+  await p2.waitForSelector('.player-name', { timeout: 20000 })
+  check((await p2.textContent('.player-name')) === uiName, 'the same account signs in from a second browser')
+  await p2.click('.player-actions button:nth-child(1)')    // LEADERBOARD
+  await p2.waitForSelector('.lb table', { timeout: 20000 })
+  const names = await p2.$$eval('.lb td:nth-child(2)', t => t.map(x => x.textContent))
+  check(names.includes(uiName) && names.includes(name), `the shared leaderboard lists both players (${names.length} rows)`)
+  await p2.screenshot({ path: `${T}live_board.jpg`, quality: 85 })
+  console.log(errs.join('\n') || 'no page errors')
+  await browser.close()
+  // the test players leave the real leaderboard again
+  require('child_process').spawnSync(process.execPath, [path.join(__dirname, '..', '..', 'scripts', 'clean-test-players.mjs')], { stdio: 'inherit' })
+})().catch(e => { console.error(e); process.exit(1) })

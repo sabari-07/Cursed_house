@@ -1,0 +1,97 @@
+// The title card and the sign-in popup, through the real UI.
+const { launch, BASE, T } = require('./lib.cjs')
+;(async () => {
+  const { browser, page, errs } = await launch()
+  const step = s => console.log('· ' + s)
+  await page.goto(BASE + '/', { waitUntil: 'load' })
+  await page.evaluate(() => localStorage.clear())
+  await page.reload({ waitUntil: 'commit' })
+  const t0 = Date.now()
+  await page.waitForSelector('.sg-board')                 // the entry screen waits for a click (it unlocks sound)
+  await page.click('.sg-board')
+  await page.waitForSelector('.title-card')
+  await page.waitForTimeout(1500)
+  await page.screenshot({ path: `${T}signin_title_1.5.jpg`, quality: 85 })
+  await page.keyboard.press('Shift')                     // a gesture that doesn't skip
+  await page.waitForTimeout(400)
+  // the title card has its own sound: its hint drops "click for sound" once the keys are audible
+  // the title card has its own sound: its "click for sound" hint goes once the keys are audible
+  step('title card sound on after a key: ' + !(await page.$('.tc-hint')))
+  await page.waitForTimeout(3500 - (Date.now() - t0))
+  await page.screenshot({ path: `${T}signin_title_3.5.jpg`, quality: 85 })
+  await page.waitForSelector('.title-card', { state: 'detached', timeout: 15000 })
+  step(`letter gone after ${((Date.now() - t0) / 1000).toFixed(1)} s`)
+  await page.waitForSelector('.player-actions')
+  step('landing buttons: ' + JSON.stringify(await page.$$eval('.player-actions button, .enter-bungalow-button', b => b.map(x => x.textContent))))
+  await page.screenshot({ path: `${T}landing_signedout.jpg`, quality: 80 })
+
+  // ENTER while signed out opens the popup
+  await page.click('.enter-bungalow-button')
+  await page.waitForSelector('.acct')
+  step('ENTER opened: ' + await page.$eval('.acct', f => f.getAttribute('aria-label')))
+  await page.waitForTimeout(3200)
+  await page.screenshot({ path: `${T}popup.jpg`, quality: 85 })
+
+  // sign up: mismatched passwords are refused
+  await page.click('.acct-tabs button:nth-child(2)')
+  step('sign-up fields: ' + JSON.stringify(await page.$$eval('.acct label span', s => s.map(x => x.textContent))))
+  await page.fill('.acct input[autocomplete="username"]', 'Ghost')
+  await page.fill('.acct input[name="password"]', 'lantern123')
+  await page.fill('.acct input[name="confirm"]', 'lantern124')
+  await page.click('.acct-go')
+  step('mismatch: ' + await page.textContent('.acct-error'))
+  step('created anyway? ' + await page.evaluate(() => (localStorage.getItem('ghostwriter_users_v1') || '').includes('Ghost')))
+  await page.fill('.acct input[name="confirm"]', 'lantern123')
+  await page.click('.acct-go')
+  await page.waitForSelector('.player-name')
+  step('signed up as: ' + await page.textContent('.player-name'))
+  await page.click('.player-actions button:last-child')       // SIGN OUT
+
+  // sign in with the wrong password: the box shakes; the second time it shakes and closes
+  const wrongTry = async () => {
+    await page.fill('.acct input[autocomplete="username"]', 'Ghost')
+    await page.fill('.acct input[name="password"]', 'wrongpass')
+    await page.click('.acct-go')
+    await page.waitForSelector('.acct.is-shaking')
+    await page.waitForTimeout(60)
+    const x = await page.$eval('.acct', f => new DOMMatrix(getComputedStyle(f).transform).m41)
+    return { error: await page.textContent('.acct-error'), shiftPx: Math.round(x) }
+  }
+  await page.click('.player-actions button:first-child')
+  await page.waitForSelector('.acct')
+  const w1 = await wrongTry()
+  await page.screenshot({ path: `${T}shake_1.jpg`, quality: 85 })
+  step(`wrong 1: "${w1.error}" | box moved ${w1.shiftPx} px | witch canvas: ${!!(await page.$('.witch-sky'))}`)
+  await page.waitForTimeout(700)
+  const w2 = await wrongTry()
+  step(`wrong 2: "${w2.error}" | box moved ${w2.shiftPx} px`)
+  await page.waitForSelector('.acct', { state: 'detached', timeout: 3000 })
+  step('popup closed after the second wrong try')
+
+  // forgot password: a new password for the name, then signed in with it
+  await page.click('.player-actions button:first-child')
+  await page.waitForSelector('.acct')
+  await page.click('.acct-forgot')
+  step('reset fields: ' + JSON.stringify(await page.$$eval('.acct label span', s => s.map(x => x.textContent))))
+  await page.fill('.acct input[autocomplete="username"]', 'ghost')
+  await page.fill('.acct input[name="password"]', 'newlamp99')
+  await page.fill('.acct input[name="confirm"]', 'newlamp99')
+  await page.click('.acct-go')
+  await page.waitForSelector('.player-name')
+  step('after reset, signed in as: ' + await page.textContent('.player-name'))
+  await page.click('.player-actions button:last-child')       // SIGN OUT
+  await page.click('.player-actions button:first-child')
+  await page.waitForSelector('.acct')
+  await page.fill('.acct input[autocomplete="username"]', 'Ghost')
+  await page.fill('.acct input[name="password"]', 'lantern123')
+  await page.click('.acct-go')
+  await page.waitForSelector('.acct-error')
+  step('old password refused: ' + await page.textContent('.acct-error'))
+  await page.waitForTimeout(700)
+  await page.fill('.acct input[name="password"]', 'newlamp99')
+  await page.click('.acct-go')
+  await page.waitForSelector('.player-name')
+  step('signed in with the new password as: ' + await page.textContent('.player-name'))
+  console.log(errs.join('\n') || 'no errors')
+  await browser.close()
+})().catch(e => { console.error(e); process.exit(1) })

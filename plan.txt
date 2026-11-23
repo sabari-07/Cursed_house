@@ -1,0 +1,887 @@
+# GHOSTWRITER: The Haunted Bungalow
+
+## A five-stage, cinematic horror treasure hunt
+
+Now we have a much stronger direction. We should stop thinking of this as a memory archive and design it as an interactive first-person horror adventure where the user helps a character survive a haunted bungalow and discover its hidden treasure.
+
+The experience should feel like a horror game, not a website decorated for Halloween. The player enters a believable abandoned house, explores physical spaces, discovers clues, solves puzzles, encounters supernatural events, and gradually uncovers the story of the treasure.
+
+The central rule for the design is:
+
+Every scary event must either reveal part of the story, create a meaningful decision, or help the player progress. No random jump scares just to fill the screen.
+
+## 1. The story
+
+
+
+
+10
+
+Title: GHOSTWRITER: The Haunted Bungalow
+
+Tagline: Five trials. One buried secret. Leave with the treasure—or become part of the house.
+
+### The premise
+
+A man named Arjun receives a letter from his missing grandfather, who disappeared 30 years ago. The letter contains a hand-drawn map and one warning:
+
+> “The treasure is inside the bungalow. The house will show you what it wants you to see. Trust the evidence, not the shadows.”
+
+Arjun arrives at an abandoned bungalow during a violent thunderstorm. The gates are open, the windows are dark, and five strange symbols are carved into the front door.
+
+Local stories say the house belonged to a wealthy collector who vanished the night he hid a fortune inside it. Nobody who entered after that night ever returned with the treasure.
+
+Arjun enters anyway.
+
+Inside, the house contains five supernatural trials. Each stage rewards observation and problem-solving, not random guessing. Every solved trial provides a key, a symbol, or a piece of the history needed to reach the treasure chamber.
+
+The final reveal: the treasure is real, but the haunting began with a betrayal that happened inside the house.
+
+## 2. Opening scene — standing outside the bungalow
+
+This is the most important scene in the entire game. If the opening looks like a flat webpage with a house image and a Start button, the horror experience fails before it begins.
+
+
+
+### What the player sees
+
+The camera is at human eye level, looking toward a large, decaying bungalow. The player is standing on a wet stone path several metres from the front gate.
+
+- The bungalow: Two floors, cracked walls, broken windows, a dark balcony, and a heavy wooden main door.
+- Pumpkins: Three or four carved pumpkins glow on the veranda steps. Their orange light flickers gently.
+- The moon: A large, pale full moon appears between moving storm clouds.
+- The tree: A dead, twisted tree stands beside the path. Its branches move in the wind.
+- The bats: Small silhouettes cross the moon at irregular intervals.
+- The fog: Ground-level fog moves slowly across the path.
+- The windows: One upstairs window briefly glows, then goes dark.
+- The gate: An old iron gate swings slightly in the wind.
+- The lightning: A distant flash briefly illuminates the entire bungalow, revealing details that disappear when the scene darkens again.
+
+The lighting should be realistic and restrained. Orange pumpkin light contrasts with cold moonlight and occasional white lightning.
+
+### Sound design
+
+The scene begins in near silence, then layers sounds gradually.
+
+| Sound          | Behaviour                                                 |
+| -------------- | --------------------------------------------------------- |
+| Wind           | Continuous, low-volume stereo ambience                    |
+| Wolves howling | Distant, irregular howls from the surrounding forest      |
+| Thunder        | Occasional distant rumble followed by stronger storms     |
+| Rain           | Light rain that becomes heavier as the player approaches  |
+| Tree branches  | Intermittent creaking and scraping                        |
+| Iron gate      | Slow metallic creaks when the wind blows                  |
+| Bats           | Brief wing sounds only when they pass close to the camera |
+| Pumpkin flames | Very subtle crackling near the entrance                   |
+
+Use original or properly licensed sound assets. Keep the wolf howls distant; they should establish isolation, not sound like a wolf standing next to the player.
+
+### Opening animation — exact sequence
+
+## 01
+
+0–5 seconds: Darkness
+
+The screen fades in from black. Wind is audible. A faint moon appears behind moving clouds.
+
+## 02
+
+5–10 seconds: The reveal
+
+Lightning illuminates the bungalow, dead tree, pumpkins, and gate. Thunder follows with a short delay.
+
+## 03
+
+10–15 seconds: Something moves
+
+Bats cross the moon. The upstairs window briefly reveals a silhouette. When lightning flashes again, the silhouette is gone.
+
+## 04
+
+15 seconds onward: The invitation
+
+The game title appears with subtle atmospheric animation. The player can click ENTER THE BUNGALOW to begin.
+
+Do not force the user to wait through a long intro. They should be able to start immediately, skip the cinematic, and control the audio.
+
+### When the player clicks Start
+
+The camera begins moving forward along the wet path. The footsteps match the movement. The gate opens slowly with a metallic groan. As the player approaches the veranda, one pumpkin flame goes out.
+
+The main door is slightly open.
+
+A faint voice comes from inside:
+
+> “You took your time, Arjun.”
+
+The camera stops at the threshold. The door opens further, revealing darkness and a dim chandelier swinging in the entrance hall.
+
+The player crosses the threshold. The door shuts behind them.
+
+The first stage begins.
+
+# 3. The five horror stages
+
+The five stages should feel like connected parts of one physical house, with increasing tension and a single overarching story.
+
+
+## Stage 1 — The Hall of Watching Eyes
+
+Location: Entrance hall
+
+The portraits seem to follow Arjun. He must discover the correct sequence of portraits and unlock the study.
+
+Observation puzzle
+
+
+## Stage 2 — The Library of Whispers
+
+Location: Grand library
+
+A whispering voice guides the player toward the wrong book. Only the evidence in a diary and bookshelf symbols reveals the correct sequence.
+
+Clue-solving puzzle
+
+
+## Stage 3 — The Dinner of the Dead
+
+Location: Dining room
+
+Ghostly figures replay the final dinner before the collector disappeared. Arjun must reconstruct the evening to discover who betrayed the family.
+
+Timeline mystery
+
+
+## Stage 4 — The Bound Spirit
+
+Location: Basement cellar
+
+A trapped spirit offers a key in exchange for help. The player must follow clues, avoid unsafe-looking routes, and break the supernatural seal.
+
+Exploration and choice
+
+
+## Stage 5 — The Treasure That Breathes
+
+Location: Secret vault
+
+Arjun reaches the treasure chamber, where all four previous clues converge. The final choice determines how the story ends.
+
+Final puzzle and reveal
+
+# Stage 1 — The Hall of Watching Eyes
+
+
+
+## Story
+
+Arjun enters a large entrance hall. The main door slams shut behind him. A chandelier swings above the staircase. Portraits of the bungalow's former residents line the walls.
+
+At the far end of the hall stands a locked door with five circular slots. Beside it is a brass plaque:
+
+> “The house remembers who came first, who lied, and who never left.”
+
+On a small table lies a torn page from Arjun's grandfather's journal. It mentions four family members, but the names are incomplete.
+
+### What the player must do
+
+Explore the hall and inspect four portraits:
+
+- The Collector — holding a golden pocket watch.
+- The Collector's Wife — holding a white flower.
+- The Son — holding a small key.
+- The Caretaker — standing beside a clock.
+
+Each portrait contains a hidden detail. The player must inspect the objects and read a short journal entry to infer the correct order of the family members in a historical event.
+
+For example, the journal says:
+
+- The caretaker arrived before the family.
+- The son entered after his mother.
+- The collector was the last person to enter the room.
+
+The player arranges the portraits on a small interactive panel in the order supported by the clues.
+
+The correct sequence unlocks the study door and reveals the first vault symbol.
+
+### Horror events
+
+- A portrait's eyes appear to follow the player as the camera moves.
+- A door at the end of the hall slowly opens, then closes when approached.
+- A portrait falls from the wall when the player solves the puzzle.
+- A shadow crosses the upper staircase, but there is nobody there.
+- When the correct order is entered, all candles extinguish except one beside the study door.
+
+These events should be scripted and timed. The portraits should not move randomly enough to obscure clues or interfere with the puzzle.
+
+### Completion
+
+Arjun finds the first symbol: THE EYE.
+
+The player receives a journal entry explaining that the family hid secrets behind the portraits. The study unlocks, and the game transitions to Stage 2.
+
+Win condition: solve the portrait-order puzzle and collect the Eye symbol.
+
+# Stage 2 — The Library of Whispers
+
+
+
+## Story
+
+The study leads into a library filled with thousands of old books. The air is unnaturally still.
+
+When Arjun approaches a bookshelf, a whisper comes from behind it:
+
+> “The book you seek is the one with no name.”
+
+Several books begin sliding out from their shelves. A candle falls over, but the flame keeps burning sideways.
+
+At the centre of the library is a locked cabinet with four rotating symbols. A note says that the cabinet contains the second vault symbol.
+
+### What the player must do
+
+The user must locate three clues across the library:
+
+1. A diary describing the collector's favourite books.
+2. A shelf with four unusual symbols carved into the wood.
+3. A loose page hidden inside a book with a missing title.
+
+The diary describes four objects in a particular order: a raven, a moon, a key, and a crown.
+
+The player must find the matching symbols and enter them into the cabinet lock.
+
+To prevent random guessing, the game should let players zoom in, read the diary, and inspect the shelf markings.
+
+### Horror events
+
+- Books fall from the shelves when the player turns away.
+- A whisper follows the player between aisles, becoming quieter near the correct shelf.
+- A rolling ladder moves on its own and stops beside the hidden page.
+- A ghostly figure appears at the end of an aisle. If approached, it fades into floating dust.
+- When the cabinet opens, a gust of wind blows every loose page toward the player.
+
+The whisper must never tell the player the answer directly. It should create uncertainty, while the actual clues remain fair and solvable.
+
+### Completion
+
+The cabinet opens, revealing a second symbol: THE RAVEN, along with a handwritten note:
+
+> “The last meal was not a farewell. It was a sentence.”
+
+This leads Arjun to the dining room.
+
+Win condition: reconstruct the symbol sequence and collect the Raven symbol.
+
+# Stage 3 — The Dinner of the Dead
+
+
+
+## Story
+
+Arjun enters the dining room. A long table is set for five people, although the house's records mention only four residents.
+
+As he approaches, chairs begin moving backwards. Ghostly figures appear around the table, reenacting a dinner from 30 years earlier.
+
+A grandfather clock strikes midnight.
+
+A ghostly woman turns toward Arjun and says:
+
+> “He invited us all. But only one of us knew what was in the vault.”
+
+The room contains four place settings, four letters, and a broken pocket watch. The fifth place setting is empty.
+
+### What the player must do
+
+The player must reconstruct the final dinner using evidence.
+
+Clues include:
+
+- A letter showing that the caretaker was dismissed that evening.
+- A torn note suggesting the son knew about the hidden treasure.
+- A broken watch stopped at 11:47 PM.
+- A dinner seating plan showing where each person sat.
+
+The user must arrange the events on a timeline and identify the person who entered the vault before the disappearance.
+
+The correct conclusion is not simply a multiple-choice guess. The game should require the player to place at least three events in a consistent order and connect the relevant evidence.
+
+### Horror events
+
+- Ghostly diners appear one by one, accompanied by chairs scraping across the floor.
+- Silverware moves slightly when the player looks away.
+- A ghost at the empty seat slowly turns its head toward the camera.
+- The clock stops at 11:47 PM, then starts ticking backwards.
+- When the timeline is completed, the ghostly dinner abruptly ends. Every figure vanishes, leaving a single empty chair facing Arjun.
+
+### Completion
+
+Arjun discovers that the caretaker entered the vault before the collector disappeared.
+
+Under the empty chair lies the third symbol: THE HOURGLASS.
+
+The accompanying note reads:
+
+> “The guilty were not the only ones bound to this house.”
+
+The player now understands that the caretaker may have betrayed the collector—but the story is not complete.
+
+Win condition: reconstruct the dinner timeline, identify the supported conclusion, and collect the Hourglass symbol.
+
+# Stage 4 — The Bound Spirit
+
+
+
+## Story
+
+A narrow staircase behind the dining room leads into the basement.
+
+The sound of rain fades as Arjun descends. Water drips from the ceiling. An old iron gate blocks the way forward, and something scratches the other side.
+
+A figure appears behind the bars: the caretaker's ghost.
+
+> “They called me the thief. They never asked why I took the key.”
+
+The spirit says the collector trapped him in the basement after discovering that he had attempted to expose a family secret. He offers to reveal the location of the final vault mechanism—but only if Arjun releases him.
+
+The basement contains three possible routes, two locked cabinets, and a sealed wall marked with the same symbols found upstairs.
+
+### What the player must do
+
+The player must:
+
+1. Find the missing iron key in a storage room.
+2. Discover a hidden inscription on a stone wall.
+3. Match the Eye, Raven, and Hourglass symbols to the inscription.
+4. Decide whether to trust the spirit enough to release the gate.
+
+The correct symbol arrangement opens the gate. The spirit reveals a hidden passage behind the cellar's wine racks.
+
+The decision should change the dialogue and one later scene, but it must not randomly punish the player for choosing a reasonable path.
+
+### Horror events
+
+- A chain drags across the floor when the player enters the basement.
+- The lantern flickers when the ghost approaches.
+- Footsteps follow the player through the corridor, stopping whenever the player stops.
+- A shadow appears behind the iron gate, even when the ghost is standing elsewhere.
+- When the gate opens, a powerful gust blows out the lantern. The player must use the faint light from the vault symbols to navigate to the exit.
+
+Avoid making the basement a frustrating maze. Provide recognizable landmarks and a clear way back to the gate.
+
+### Completion
+
+The spirit reveals the final mechanism and gives Arjun the fourth symbol: THE KEY.
+
+The hidden passage leads to a stone door. Four symbols glow around its frame, and a fifth slot remains empty.
+
+Behind the door, the player hears a heartbeat.
+
+Win condition: solve the symbol mechanism, make the spirit-related choice, and reach the hidden passage.
+
+# Stage 5 — The Treasure That Breathes
+
+
+
+## Story
+
+Arjun enters a hidden vault beneath the bungalow. The room is enormous, with stone pillars, ancient carvings, broken statues, and a golden chest resting on a stone pedestal.
+
+The chest is surrounded by four empty recesses. The symbols collected throughout the house match the recesses, but the fifth slot on the entrance door remains unexplained.
+
+As Arjun approaches the chest, the heartbeat grows louder.
+
+A ghost appears behind him. It is the collector.
+
+> “You have found my treasure. But you still don't know what you are taking.”
+
+The collector reveals that the treasure was hidden after a betrayal. The caretaker tried to expose the truth, the son attempted to steal the fortune, and the collector sealed the vault to keep the family secret hidden.
+
+The treasure is not cursed because it is gold. It is cursed because the collector trapped the truth inside the house—and every person who tried to take the treasure without uncovering that truth became part of its haunting.
+
+## The final puzzle
+
+The player must combine the four symbols and use evidence from the previous stages.
+
+- The Eye: reveals what was hidden.
+- The Raven: represents the secret message.
+- The Hourglass: establishes the order of events.
+- The Key: opens the sealed mechanism.
+
+The player places the symbols in the order established by the evidence and turns the final mechanism.
+
+The vault door opens. The chest unlocks.
+
+But before the player can collect the treasure, the collector asks one final question:
+
+> “What is worth more than everything inside this chest?”
+
+The answer comes from the story: the truth.
+
+The player must choose what to do with the evidence:
+
+- Take the treasure and leave the secret buried.
+- Reveal the truth and release the spirits.
+- Take the evidence and treasure, preserving the truth for the outside world.
+
+The third option is the best ending, provided the player has collected the necessary evidence in the earlier stages.
+
+## The final horror sequence
+
+Once the player makes the choice:
+
+1. The chest opens slowly.
+2. Golden light spills across the room.
+3. The collector's ghost becomes fully visible for the first time.
+4. The walls begin to shake and dust falls from the ceiling.
+5. The other ghosts appear in the background.
+6. The storm outside suddenly stops.
+7. The ghosts fade, one by one, as the house begins to brighten.
+
+The player walks back through the now-silent bungalow. The portraits no longer follow him. The candles burn steadily. The front door opens onto the first light of dawn.
+
+The final screen reads:
+
+TREASURE RECOVERED. THE HOUSE REMEMBERS.
+
+Display the ending, the player's discoveries, and the choices made throughout the game. Offer a restart button so the user can replay the adventure.
+
+### Three endings
+
+| Ending             | Conditions                                                     | Result                                                                                   |
+| ------------------ | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| The Cursed Fortune | Take the gold without revealing the truth                      | The player escapes, but the final scene shows the bungalow waiting for its next visitor. |
+| The Release        | Reveal the truth but leave the treasure behind                 | The ghosts are freed, and the house becomes peaceful.                                    |
+| The True Treasure  | Recover the evidence, solve the mystery, and take the treasure | The player escapes with the treasure and exposes the collector's secret.                 |
+
+The ending should depend on actual choices and collected evidence—not a random result.
+
+Win condition: solve the vault puzzle and reach one of the three endings. The best ending requires completing all four earlier stages.
+
+# 4. Make the house feel physically real
+
+The most important design choice is how the user moves through the environment.
+
+I recommend a first-person 3D horror adventure. The player should feel as if they are standing inside the bungalow, rather than navigating a series of unrelated webpage sections.
+
+
+
+
+12
+
+## Controls
+
+- `W`, `A`, `S`, `D`: Move.
+- Mouse: Look around.
+- `E`: Inspect or interact.
+- `F`: Toggle flashlight.
+- `J`: Open journal and clues.
+- `Esc`: Pause or open settings.
+
+On mobile, provide an on-screen joystick and an interaction button.
+
+The user should be able to walk to a door, look at its handle, press the interaction key, and see it open. The player should be able to approach a portrait, inspect it, and read its hidden clue.
+
+The environment must respond to the player's actions.
+
+## Recommended implementation
+
+For this concept, I would use Three.js with React Three Fiber, rather than trying to create the entire game with static images and CSS.
+
+| Component                    | Purpose                                                          |
+| ---------------------------- | ---------------------------------------------------------------- |
+| Three.js / React Three Fiber | Render the house and rooms in 3D                                 |
+| GLTF/GLB assets              | House furniture, doors, pumpkins, portraits, and treasure        |
+| Animation system             | Doors, bats, ghosts, candles, and environmental events           |
+| Audio manager                | Thunder, footsteps, ambience, ghost sounds, and interaction cues |
+| Collision system             | Prevent walking through walls, furniture, and locked doors       |
+| Game-state engine            | Manage clues, stage progression, choices, and endings            |
+| React UI                     | Menus, journal, puzzle interfaces, subtitles, and settings       |
+
+Use a consistent asset style. Photorealistic assets mixed with cartoonish ghosts or low-quality furniture will destroy the atmosphere.
+
+You don't need a massive open world. Build five connected, compact spaces with deliberate sightlines and controlled lighting.
+
+# 5. Exact visual rules
+
+The problem with many AI-generated UI implementations is that they produce a generic landing page, a few cards, and a Start button. That is not enough for this game.
+
+The implementation must follow these rules:
+
+- The 3D environment is the primary interface. React panels should be minimal and contextual.
+- Do not display conventional dashboards during exploration.
+- Do not use emoji as game assets.
+- Do not use static backgrounds as a substitute for interactive rooms.
+- Do not use a full-screen image with invisible hotspots and call it 3D.
+- Use real scene transitions when the player enters a new room.
+- Every interactable object must have a defined action and state.
+- Every puzzle must have a correct solution, feedback, and a completion condition.
+- Use cinematic camera movement only for scripted transitions. Return control to the player after each transition.
+- Keep the main interaction prompt small and positioned near the object being inspected.
+- Show a compact journal icon and a clear stage indicator, not a large permanent HUD.
+- Use restrained post-processing. Fog, shadows, bloom, and film grain should enhance visibility rather than make the game difficult to play.
+
+## 6. Technical implementation sequence
+
+Build one playable slice before attempting all five stages.
+
+Phase 1 — Opening and movement
+
+Create the exterior, moon, moving clouds, pumpkins, tree, bats, fog, thunder, and wolf ambience. Implement mouse look, movement, collision, and the entrance door.
+
+Phase 2 — First room
+
+Build the entrance hall with working portraits, one solvable puzzle, one scripted ghost event, and the transition into the study.
+
+Phase 3 — Game engine
+
+Implement the stage manager, clue inventory, journal, puzzle validation, progress persistence, and unlock conditions.
+
+Phase 4 — Remaining stages
+
+Create the library, dining room, cellar, and treasure chamber. Add the corresponding clues, ghost encounters, and puzzles.
+
+Phase 5 — Horror polish
+
+Add layered audio, spatial sound where feasible, lightning, environmental reactions, ghost animations, scene transitions, and ending cinematics.
+
+Phase 6 — Testing
+
+Verify all five stages, correct and incorrect puzzle inputs, checkpoint restoration, all three endings, sound settings, and performance on the target device.
+
+# 7. Master prompt
+
+Use the following prompt as the main game specification. The critical instruction is to build and verify the actual 3D environment first, not generate a generic website.
+
+# BUILD SPECIFICATION: GHOSTWRITER — THE HAUNTED BUNGALOW
+
+## 1. Role
+
+Act as a senior 3D web game developer, horror-game level designer, technical artist, sound designer, and gameplay engineer.
+
+Build a playable first-person horror adventure. Do not build a conventional website or dashboard.
+
+The main deliverable is a functioning interactive 3D game in which the player helps Arjun explore a haunted bungalow, complete five horror stages, collect clues, solve puzzles, and recover a hidden treasure.
+
+## 2. Core experience
+
+The game begins outside an abandoned bungalow at midnight.
+
+The opening scene must contain:
+
+- A large, realistic, decaying two-storey bungalow
+- A full moon partly obscured by moving storm clouds
+- An old leafless tree beside the entrance
+- Three or four glowing jack-o'-lanterns on the veranda
+- Bats flying across the moon
+- Moving ground fog
+- Wind-blown branches
+- Occasional lightning that illuminates the complete environment
+- Rain and distant thunder
+- Distant wolf howls
+- A heavy wooden entrance door and an old iron gate
+
+The player stands on the path, facing the bungalow from a human eye-level camera.
+
+The environment must be animated, not a static background image.
+
+The game title is:\
+GHOSTWRITER: THE HAUNTED BUNGALOW
+
+Tagline:\
+Five trials. One buried secret. Leave with the treasure—or become part of the house.
+
+Provide an ENTER THE BUNGALOW button.
+
+When clicked:
+
+1. Begin the camera movement toward the gate.
+2. Animate the gate opening.
+3. Move the player toward the veranda.
+4. Extinguish one pumpkin as the player approaches.
+5. Open the front door.
+6. Transition into the entrance hall.
+7. Close the door behind the player.
+8. Start Stage 1.
+
+Allow the intro to be skipped. Audio must begin after user interaction if required by browser autoplay rules.
+
+## 3. Technology
+
+Use React, TypeScript, Vite, Three.js, and React Three Fiber.
+
+Use appropriate GLTF/GLB models for architecture, props, doors, furniture, and characters. Use a suitable animation and collision solution. Choose a stable, minimal set of dependencies.
+
+Use CSS or a UI library only for menus, subtitles, journal panels, puzzle controls, and settings.
+
+Do not simulate the whole game with static images, background videos, or invisible hotspots.
+
+If suitable models or audio assets are unavailable, create cohesive procedural or low-poly alternatives with consistent materials and lighting. Never leave empty placeholder boxes or broken asset paths.
+
+## 4. Movement and interaction
+
+Desktop controls:
+
+- WASD: movement
+- Mouse: camera look
+- E: interact
+- F: flashlight
+- J: journal
+- Escape: pause/settings
+
+Implement a first-person camera, pointer lock, collision detection, interaction distance, and visible interaction prompts.
+
+The player must not walk through walls, doors, furniture, or closed gates.
+
+Provide a menu with sensitivity, master volume, effects volume, ambient volume, subtitles, and reduced motion.
+
+On mobile, provide an appropriate on-screen movement and interaction interface if time permits.
+
+## 5. Game architecture
+
+Separate the code into:
+
+- Scene manager
+- Player controller
+- Collision and interaction system
+- Stage manager
+- Puzzle and clue engine
+- Inventory and journal
+- Ghost animation/state system
+- Audio manager
+- Save/load manager
+- UI and settings
+- Individual room scenes and reusable environment assets
+
+Use typed interfaces and data-driven stage definitions.
+
+The game must preserve completed stages and collected clues after refresh. Implement local save data with a versioned schema.
+
+Use deterministic game logic. Do not use AI to decide puzzle correctness or alter essential story events.
+
+## 6. Stage 1 — The Hall of Watching Eyes
+
+Create a grand entrance hall with a staircase, chandelier, dusty floor, four portraits, candles, and a locked study door.
+
+The portraits represent:
+
+- The Collector
+- The Collector's Wife
+- The Son
+- The Caretaker
+
+Provide a journal page with clues about the order in which the family members entered a room.
+
+The player inspects the portraits, arranges them into the supported sequence, and unlocks the study.
+
+Horror events:
+
+- Subtle portrait eye movement
+- A distant door opening and closing
+- A falling portrait after the puzzle is solved
+- A shadow on the staircase
+- Candles extinguishing except for one near the unlocked door
+
+Reward: THE EYE symbol.
+
+All puzzle answers must be derived from explicit clues.
+
+## 7. Stage 2 — The Library of Whispers
+
+Create a large dark library with tall wooden shelves, rolling ladders, dusty books, candles, and a locked cabinet.
+
+Clues:
+
+- A diary describing four symbols
+- A shelf with carved markings
+- A loose page inside an untitled book
+
+The player identifies the correct symbol sequence and unlocks the cabinet.
+
+Horror events:
+
+- Books falling from shelves
+- Whispers moving between aisles
+- A ladder moving toward a hidden clue
+- A ghostly figure fading at the end of an aisle
+- Loose pages moving when the cabinet opens
+
+Reward: THE RAVEN symbol and a clue leading to the dining room.
+
+## 8. Stage 3 — The Dinner of the Dead
+
+Create a long abandoned dining room with silverware, dusty plates, candles, tall windows, a grandfather clock, and five place settings.
+
+Ghostly figures replay the collector's final dinner.
+
+Clues:
+
+- The caretaker's dismissal letter
+- A note about the son
+- A broken watch stopped at 11:47 PM
+- A seating plan
+
+The player must reconstruct the timeline and support a conclusion about who entered the vault before the disappearance.
+
+Horror events:
+
+- Ghostly diners appearing around the table
+- Chairs moving
+- Silverware shifting
+- A ghost at the empty seat turning toward the camera
+- The clock reversing briefly
+
+Reward: THE HOURGLASS symbol.
+
+The evidence must support the correct conclusion.
+
+## 9. Stage 4 — The Bound Spirit
+
+Create a damp underground cellar with stone walls, an iron gate, chains, crates, a lantern, and a hidden passage.
+
+The player discovers a trapped ghost who claims to have been framed.
+
+Objectives:
+
+- Find the iron key
+- Discover the wall inscription
+- Arrange the collected symbols correctly
+- Open the iron gate
+- Choose whether to trust the spirit
+- Discover the passage behind the wine racks
+
+Horror events:
+
+- Dragging chains
+- A flickering lantern
+- Footsteps that stop when the player stops
+- A shadow moving independently of the ghost
+- A short blackout when the passage opens
+
+Reward: THE KEY symbol and access to the final vault.
+
+The choice should alter later dialogue without making the game unwinnable.
+
+## 10. Stage 5 — The Treasure That Breathes
+
+Create a secret underground treasure chamber with stone pillars, ancient carvings, candles, a large golden chest, and supernatural mist.
+
+Use the Eye, Raven, Hourglass, and Key symbols with a final mechanism.
+
+The player reconstructs the truth from evidence found in earlier stages and unlocks the chest.
+
+The collector's ghost appears and explains the history of the betrayal.
+
+Final choice:
+
+- Take the treasure and conceal the truth
+- Reveal the truth but leave the treasure
+- Recover the evidence and treasure
+
+Implement three distinct endings:
+
+1. The Cursed Fortune
+2. The Release
+3. The True Treasure
+
+The best ending requires collecting the necessary evidence from all previous stages.
+
+The ending must depend on actual game state and player choices.
+
+## 11. Horror and sound design
+
+Implement layered ambience:
+
+- Wind
+- Rain
+- Distant wolf howls
+- Thunder and lightning
+- Footsteps
+- Door creaks
+- Chandelier movement
+- Page turns
+- Ghost appearance sounds
+- Puzzle feedback
+- Environmental impacts
+
+Use spatial audio where feasible.
+
+Provide volume controls and subtitles. Audio must be optional, and the game must remain playable when muted.
+
+Use original or properly licensed models, textures, and audio. Keep asset credits in the README.
+
+## 12. Visual quality
+
+Use cinematic lighting and coherent materials.
+
+Palette:
+
+- Near-black and charcoal
+- Cold moonlight
+- Warm pumpkin orange
+- Muted candle amber
+- Spectral blue for supernatural events
+- Deep burgundy as a rare accent
+
+Use fog, shadows, environmental movement, and controlled camera transitions.
+
+Avoid:
+
+- Generic admin dashboards
+- Emoji as world assets
+- Static-image-only environments
+- Random jump scares that interrupt puzzle solving
+- Excessive particle effects
+- Constant camera shaking
+- Unreadable darkness
+- Unnecessary 3D complexity
+
+The world must be dark but navigable. Essential clues must remain visible and readable.
+
+## 13. Build and testing procedure
+
+First inspect the workspace and report its current structure.
+
+Then:
+
+1. Set up the application and render a real 3D exterior.
+2. Implement the player controller, camera, collision, and gate.
+3. Complete the entrance-to-hall transition.
+4. Build Stage 1 completely, including its puzzle and reward.
+5. Test the entire Stage 1 journey.
+6. Implement the stage manager and persistence.
+7. Build the remaining stages one at a time.
+8. Add the final chamber and all endings.
+9. Add sound, lighting polish, and environmental effects.
+10. Run type checking, linting, unit tests, and browser tests.
+11. Fix all critical issues and document remaining limitations.
+
+After every phase, report what actually works and what remains incomplete.
+
+Do not mark a stage complete if the player cannot enter it, interact with its objects, solve its puzzle, and progress to the next stage.
+
+## 14. Definition of done
+
+A player must be able to:
+
+- Start outside the bungalow
+- Walk through the entrance
+- Explore all five stages
+- Inspect and collect clues
+- Solve every puzzle
+- Trigger the intended ghost events
+- Unlock the treasure chamber
+- Complete each available ending
+- Save progress and resume the game
+- Mute audio and use readable controls
+
+Build a playable game, not a visual prototype.
+
+Start with the exterior scene and the complete Stage 1 vertical slice. Verify those before implementing the remaining four stages.
+
+## 8. One final recommendation
+
+Do not try to generate all five rooms, all ghost assets, every sound effect, and the entire game in one enormous step. That tends to produce a visually inconsistent world with broken interactions.
+
+Start with the exterior + entrance hall + first puzzle. When you can walk through the door and solve that puzzle in a functioning 3D scene, the foundation is ready.
+
+Then build the other four stages using the same lighting, interaction, audio, and puzzle systems. This gives you the best chance of getting a coherent horror game rather than five unrelated AI-generated environments.

@@ -1,0 +1,137 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: The Cursed House - accounts, saved progress and the shared leaderboard (DynamoDB + Lambda + HTTP API).
+
+Parameters:
+  CodeBucket: { Type: String, Description: S3 bucket holding the Lambda zip }
+  CodeKey: { Type: String, Description: S3 key of the Lambda zip }
+  AllowedOrigin: { Type: String, Description: 'The site that may call the API, e.g. https://main.d123.amplifyapp.com' }
+
+Resources:
+  # One table: players (USER#...), sessions (SESS#..., deleted by TTL), and the "board" index for the leaderboard.
+  Table:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: cursed-house
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: pk, AttributeType: S }
+        - { AttributeName: sk, AttributeType: S }
+        - { AttributeName: gpk, AttributeType: S }
+        - { AttributeName: gsk, AttributeType: S }
+      KeySchema:
+        - { AttributeName: pk, KeyType: HASH }
+        - { AttributeName: sk, KeyType: RANGE }
+      GlobalSecondaryIndexes:
+        - IndexName: board
+          KeySchema:
+            - { AttributeName: gpk, KeyType: HASH }
+            - { AttributeName: gsk, KeyType: RANGE }
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes: [name, progress]
+      TimeToLiveSpecification: { AttributeName: ttl, Enabled: true }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification: { SSEEnabled: true }
+
+  # The function may touch this one table and its index, and write its own logs. Nothing else.
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - { Effect: Allow, Principal: { Service: lambda.amazonaws.com }, Action: sts:AssumeRole }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: cursed-house-table
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:UpdateItem, dynamodb:DeleteItem, dynamodb:Query]
+                Resource: [!GetAtt Table.Arn, !Sub '${Table.Arn}/index/board']
+
+  Logs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/cursed-house-api
+      RetentionInDays: 14
+
+  Function:
+    Type: AWS::Lambda::Function
+    DependsOn: Logs
+    Properties:
+      FunctionName: cursed-house-api
+      Runtime: nodejs20.x
+      Handler: index.handler
+      Architectures: [arm64]
+      MemorySize: 1024          # the password hash runs faster with more CPU
+      Timeout: 10
+      # (no reserved concurrency: this account's whole limit is 10; the API throttle below caps the load)
+      Role: !GetAtt FunctionRole.Arn
+      Code: { S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey }
+      Environment: { Variables: { TABLE: !Ref Table, NODE_OPTIONS: --enable-source-maps } }
+
+  Api:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: cursed-house-api
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins: [!Ref AllowedOrigin, 'http://localhost:5178', 'http://127.0.0.1:5178']
+        AllowMethods: [GET, POST, PUT, OPTIONS]
+        AllowHeaders: [content-type, authorization]
+        MaxAge: 600
+
+  Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref Api
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt Function.Arn
+      PayloadFormatVersion: '2.0'
+
+  Routes:
+    Type: AWS::ApiGatewayV2::Route
+    Properties: { ApiId: !Ref Api, RouteKey: 'POST /signup', Target: !Sub 'integrations/${Integration}' }
+  RouteSignin:
+    Type: AWS::ApiGatewayV2::Route
+    Properties: { ApiId: !Ref Api, RouteKey: 'POST /signin', Target: !Sub 'integrations/${Integration}' }
+  RouteReset:
+    Type: AWS::ApiGatewayV2::Route
+    Properties: { ApiId: !Ref Api, RouteKey: 'POST /reset', Target: !Sub 'integrations/${Integration}' }
+  RouteSignout:
+    Type: AWS::ApiGatewayV2::Route
+    Properties: { ApiId: !Ref Api, RouteKey: 'POST /signout', Target: !Sub 'integrations/${Integration}' }
+  RouteMe:
+    Type: AWS::ApiGatewayV2::Route
+    Properties: { ApiId: !Ref Api, RouteKey: 'GET /me', Target: !Sub 'integrations/${Integration}' }
+  RouteProgress:
+    Type: AWS::ApiGatewayV2::Route
+    Properties: { ApiId: !Ref Api, RouteKey: 'PUT /progress', Target: !Sub 'integrations/${Integration}' }
+  RouteBoard:
+    Type: AWS::ApiGatewayV2::Route
+    Properties: { ApiId: !Ref Api, RouteKey: 'GET /leaderboard', Target: !Sub 'integrations/${Integration}' }
+
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref Api
+      StageName: $default
+      AutoDeploy: true
+      DefaultRouteSettings: { ThrottlingRateLimit: 20, ThrottlingBurstLimit: 40 }
+
+  InvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref Function
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*'
+
+Outputs:
+  ApiUrl: { Value: !GetAtt Api.ApiEndpoint }
+  TableName: { Value: !Ref Table }

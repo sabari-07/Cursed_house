@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+*.tsbuildinfo
+
+# logs and local env
+*.log
+npm-debug.log*
+.env
+.env.*
+!.env.example
+# deployment: credentials (config/.env, above) and the deploy script's build files
+config/deploy/
+config/aws-*-none
+
+# editors and OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# NOTE: .kiro/ (specs, steering, hooks) is intentionally NOT ignored.
+# browser check screenshots
+tests/browser/out/

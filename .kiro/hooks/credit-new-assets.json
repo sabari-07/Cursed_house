@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Credit new assets",
+      "trigger": "PostFileCreate",
+      "description": "Keeps README asset credits complete: whenever an image, sound or font is added to public/, the agent must add its source and licence before moving on.",
+      "matcher": "public[\\\\/].*\\.(png|jpe?g|webp|mp3|wav|ogg|ttf|otf|woff2?)$",
+      "action": {
+        "type": "agent",
+        "prompt": "A new file was created under public/. Before continuing, add a row for it to the \"Asset credits\" table in README.md: file path, source with a link, author if known, licence, and any edit made (trimmed, recoloured, figure painted out). Follow .kiro/steering/assets-and-licensing.md. If the source or licence is unknown, stop and ask the user instead of guessing."
+      }
+    }
+  ]
+}

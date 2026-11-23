@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Verify after each spec task",
+      "trigger": "PostTaskExec",
+      "description": "After a spec task is marked complete, runs the full type-check and production build so a finished task never leaves the game unbuildable.",
+      "action": {
+        "type": "command",
+        "command": "npm run build",
+        "timeout": 300
+      }
+    }
+  ]
+}
