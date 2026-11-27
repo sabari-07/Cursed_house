@@ -37,6 +37,38 @@ const { launch, player, enter, check } = require('./lib.cjs')
     await page.click('.candle-tool')
     await page.waitForTimeout(300)
     check(!(await torch()).on, 'one more click puts it down')
+
+    // zoomed in on a portrait and on the clock, the candle can still be picked up and lights the room
+    for (const target of [{ kind: 'portrait', index: 0 }, { kind: 'clock' }]) {
+      const name = target.kind
+      const a = await page.evaluate(t => window.__hall.anchor(t), target)
+      await page.mouse.click(a.x, a.y + 40)
+      await page.waitForSelector('.note-panel', { timeout: 5000 })
+      await page.waitForTimeout(900)                       // the camera zooms in
+      const top = await page.evaluate(() => {
+        const r = document.querySelector('.candle-tool').getBoundingClientRect()
+        const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)
+        return !!el && !!el.closest('.candle-tool')
+      })
+      check(top, `${name} zoomed in: nothing covers the candle`)
+      await page.click('.candle-tool')
+      await page.mouse.move(a.x + 30, a.y + 20)
+      await page.waitForTimeout(400)
+      const t = await torch()
+      check(t.on && t.k > 0.5, `${name} zoomed in: the candle is picked up and lights the room (light ${t.k})`)
+      await page.screenshot({ path: require('./lib.cjs').T + `candle_zoom_${name}.jpg`, quality: 75 })
+      await page.click('.candle-tool')
+      await page.waitForTimeout(300)
+      check(!(await torch()).on, `${name} zoomed in: one more click puts it down`)
+      await page.click('.panel-close')
+      await page.waitForTimeout(600)
+    }
+    // the answer panel covers the whole room: the light goes out under it
+    await page.click('.candle-tool'); await page.mouse.move(700, 450); await page.waitForTimeout(300)
+    check((await torch()).on, 'carried again before answering')
+    await page.click('.answer-button'); await page.waitForSelector('.lock'); await page.waitForTimeout(600)
+    const under = await torch()
+    check(!under.on && under.k < 0.05, `under the answer panel the light is out (light ${under.k})`)
   }
   console.log(errs.join('\n') || 'no page errors')
   await browser.close()

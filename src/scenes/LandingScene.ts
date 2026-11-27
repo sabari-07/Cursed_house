@@ -7,10 +7,12 @@ import { audioManager } from '../game/AudioManager'
 // The reference painting is the backdrop. Everything that moves is a real,
 // separately rendered layer on top of it:
 //   • storm clouds (shader) drifting across the sky and the moon
-//   • ground fog, rain, steady firelight; one tree lantern and two pumpkins blink
+//   • ground fog, rain; a tree lantern that stutters now and then, pumpkins whose
+//     flames flicker gently (one goes out as Arjun walks past it)
 //   • 3D bats with flapping wings crossing and circling the moon
 //   • lightning that lights the whole scene, with a visible bolt + thunder
-//   • one upstairs window that blinks; a person's shadow on alternate blinks
+//   • one dark upstairs window that briefly glows; a figure stands in it on
+//     alternate glows and is gone when lightning flashes
 //   • Arjun (3D, lantern in hand) who turns around to face the bungalow
 // All coordinates below are measured in pixels of the 1072×715 painting.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,31 +54,66 @@ const PAINTED_BATS: Array<[number, number, number, number]> = [
 /** Arjun's feet position and height in painting pixels. */
 const ARJUN_FEET = { x: 738, y: 765 }
 const ARJUN_HEIGHT = 152
-/** The upstairs window that blinks (big centre window, measured). */
-const BLINK_WINDOW = { x0: 673, y0: 250, x1: 702, y1: 287 }
-const MOON = { x: 603, y: 160, r: 136 }
-/** Lantern hanging in the left tree (centre + radii of its glow, painting px, measured). */
-const TREE_LANTERN = { x: 95, y: 227, rx: 36, ry: 38 }
 /**
- * The two jack-o'-lanterns that blink, chosen by the owner: the first (outermost) big pumpkin on
- * each side. Left: body x 62-330, y 722-905. Right: body x 1242-1480, y 695-847.
- * Centre and radii of the body, painting px, measured. The left radius stops short of the
- * pumpkin touching it on the right (from x 320).
+ * The upstairs window that glows (the arched gable window under the top spire). Its lit glass,
+ * measured on the 10 px grid: x 676-701, y 252-285. Plan: dark, briefly glows, goes dark again.
  */
-const PUMPKIN_A = { x: 196, y: 814, rx: 128, ry: 90 }
-const PUMPKIN_B = { x: 1361, y: 771, rx: 116, ry: 74 }
+const BLINK_WINDOW = { x0: 676, y0: 252, x1: 701, y1: 285 }
+const MOON = { x: 603, y: 160, r: 136 }
+/**
+ * Lantern hanging in the left tree: centre and half-size of its glass (x 67-119, y 203-253,
+ * measured); the glow it throws on the branches reaches about 1.6 times that.
+ */
+const TREE_LANTERN = { x: 93, y: 228, rx: 26, ry: 25 }
+/**
+ * The jack-o'-lanterns whose flames flicker gently (plan: "carved pumpkins glow on the veranda
+ * steps, their orange light flickers gently"). Centre and radii of each body, painting px,
+ * measured on the 10 px grid. The first four sit at the foot of the veranda; the last two are
+ * the big outermost pumpkins on each side (left body x 62-330, y 722-905, the radius stops
+ * short of the pumpkin touching it at x 320; right body x 1242-1480, y 695-847).
+ */
+const PUMPKINS: Array<{ x: number; y: number; rx: number; ry: number }> = [
+  { x: 542, y: 590, rx: 15, ry: 13 },   // veranda, left cluster, back
+  { x: 530, y: 613, rx: 17, ry: 14 },   // veranda, left cluster, front
+  { x: 707, y: 602, rx: 16, ry: 13 },   // on the path below the steps: the one that goes out
+  { x: 872, y: 590, rx: 10, ry: 10 },   // veranda, right row
+  { x: 196, y: 814, rx: 128, ry: 90 },  // big pumpkin, far left
+  { x: 1361, y: 771, rx: 116, ry: 74 }, // big pumpkin, far right
+]
+/**
+ * A pumpkin candle guttering: [seconds into the cycle, flame level]. It sinks, nearly goes out,
+ * catches again with a short flare and settles. Each pumpkin does this on its own every
+ * PUMPKIN_GUTTER_EVERY seconds, so the jack-o'-lanterns visibly flicker out of step.
+ */
+const PUMPKIN_GUTTER: Array<[number, number]> = [
+  [0, 0.7], [0.1, 0.35], [0.22, 0.6], [0.3, 0.2], [0.48, 0.55], [0.58, 1.3], [0.75, 1],
+]
+/** Seconds between gutters of one pumpkin: base + random spread. */
+const PUMPKIN_GUTTER_EVERY = { base: 2.5, spread: 3.5 }
+/** Index in PUMPKINS of the pumpkin whose flame goes out as Arjun walks past it. */
+const SNUFF_PUMPKIN = 2
+/** Arjun's feet height (painting px) on the walk at which that flame goes out. */
+const SNUFF_AT_Y = 650
+/** The flame going out: [seconds after it starts, light level]; a last flare, then out. */
+const SNUFF_KEYS: Array<[number, number]> = [[0, 1.15], [0.12, 0.55], [0.2, 0.85], [0.3, 0.2], [0.42, 0]]
 
 /**
- * Blink cycles: [seconds into the cycle, light level]. Level 0 is dark, 1 is
- * normal, above 1 is a short flare as the flame catches again. A cycle
- * starts again after a short random pause, so these lights never stop blinking.
+ * Blink cycle of the tree lantern: [seconds into the cycle, light level]. Level 0 is dark,
+ * 1 is normal, above 1 is a short flare as the flame catches again. It stutters now and
+ * then (every 4-8 s), so the scene stays restrained.
  */
 const LANTERN_BLINK: Array<[number, number]> = [
   [0, 0.15], [0.05, 0.9], [0.09, 0], [0.35, 0.6], [0.4, 0], [0.52, 1.25], [0.65, 1],
 ]
-const PUMPKIN_BLINK: Array<[number, number]> = [
-  [0, 0.45], [0.08, 0], [0.42, 0.35], [0.48, 0], [0.65, 0.7], [0.72, 1.2], [0.88, 1],
+/**
+ * The upstairs window's glow: [seconds, light level], 0 = dark (its rest state). A stutter as
+ * it catches, held for about 2 s, a stutter, then dark.
+ */
+const WINDOW_GLOW: Array<[number, number]> = [
+  [0, 0.6], [0.08, 0.1], [0.16, 0.8], [0.5, 1], [2.2, 0.3], [2.3, 0.9], [2.38, 0.4], [2.6, 0],
 ]
+/** First window glow (plan: "10-15 seconds: the upstairs window briefly reveals a silhouette"). */
+const FIRST_WINDOW_GLOW = 11
 /** Real thunder clap; the lightning flash is driven by this recording's loudness. */
 const THUNDER_HIT = '/audio/thunder-hit.mp3'
 const THUNDER_ENV_STEP = 0.01
@@ -181,14 +218,16 @@ export class LandingScene {
     uOffset: { value: new THREE.Vector2() },
     uImg: { value: new THREE.Vector2(IMG_W, IMG_H) },
     uWin: { value: new THREE.Vector4(BLINK_WINDOW.x0, BLINK_WINDOW.y0, BLINK_WINDOW.x1, BLINK_WINDOW.y1) },
-    uWinOn: { value: 1 },
+    /** Upstairs window light: 0 dark (rest), 1 glowing. */
+    uWinOn: { value: 0 },
+    /** A figure standing in that window (0..1). */
+    uWinSil: { value: 0 },
     uMoon: { value: new THREE.Vector3(MOON.x, MOON.y, MOON.r) },
     uLamp: { value: new THREE.Vector4(TREE_LANTERN.x, TREE_LANTERN.y, TREE_LANTERN.rx, TREE_LANTERN.ry) },
     uLampOn: { value: 1 },
-    uPumpA: { value: new THREE.Vector4(PUMPKIN_A.x, PUMPKIN_A.y, PUMPKIN_A.rx, PUMPKIN_A.ry) },
-    uPumpAOn: { value: 1 },
-    uPumpB: { value: new THREE.Vector4(PUMPKIN_B.x, PUMPKIN_B.y, PUMPKIN_B.rx, PUMPKIN_B.ry) },
-    uPumpBOn: { value: 1 },
+    uPump: { value: PUMPKINS.map(p => new THREE.Vector4(p.x, p.y, p.rx, p.ry)) },
+    /** Light level of each pumpkin's flame (1 normal, 0 out). */
+    uPumpOn: { value: PUMPKINS.map(() => 1) },
     uDoor: { value: new THREE.Vector4(DOOR.x0, DOOR.y0, DOOR.x1, DOOR.y1) },
     uDoorArch: { value: DOOR.arch },
     uDoorOpen: { value: 0 },
@@ -198,10 +237,16 @@ export class LandingScene {
     uFade: { value: 0 },
   }
 
-  // Independent, never-ending blinkers (different phases so they don't sync).
-  private lampBlink = { t: -1, wait: 0, next: 0.6 }
-  private pumpABlink = { t: -1, wait: 0, next: 1.4 }
-  private pumpBBlink = { t: -1, wait: 0, next: 2.3 }
+  // The tree lantern's never-ending blinker.
+  private lampBlink = { t: -1, wait: 0, next: 4 }
+  /** One gutter blinker per pumpkin, first gutters staggered over the first 4 s. */
+  private pumpBlink = PUMPKINS.map((_, i) => ({ t: -1, wait: 0, next: 0.8 + ((i * 0.37) % 1) * 3.2 }))
+  /** Each pumpkin's guttering level (1 = steady), eased like a flame. */
+  private pumpGutter = PUMPKINS.map(() => 1)
+  /** Enter time (audio clock) at which the SNUFF_PUMPKIN flame started going out, or null. */
+  private snuffAt: number | null = null
+  /** Arjun's feet height on the painting this frame (painting px). */
+  private arjunFeetY = ARJUN_FEET.y
 
   // Arjun
   private arjunModel = new ArjunModel()
@@ -235,9 +280,14 @@ export class LandingScene {
   private flashTimer = 0
   private nextFlash = 2.5
   private flashT = -1
+  // the upstairs window's glow
   private blinkTimer = 0
-  private nextBlink = 4
+  private nextBlink = FIRST_WINDOW_GLOW
   private blinkT = -1
+  /** Glows so far; a figure stands in the window on the first and every other one. */
+  private winGlows = 0
+  /** The figure is gone once lightning flashes during the glow. */
+  private winSilGone = false
 
   // audio
   private ctx: AudioContext | null = null
@@ -681,13 +731,16 @@ export class LandingScene {
       `,
       fragmentShader: /* glsl */ `
         uniform sampler2D uTex;
-        uniform float uTime, uFlash, uScale, uWinOn;
+        uniform float uTime, uFlash, uScale, uWinOn, uWinSil;
         uniform vec2 uScreen, uOffset, uImg;
         uniform vec4 uWin;
         uniform vec3 uMoon;
         varying vec2 vUv;
-        uniform vec4 uLamp, uPumpA, uPumpB;
-        uniform float uLampOn, uPumpAOn, uPumpBOn;
+        uniform vec4 uLamp;
+        uniform float uLampOn;
+        #define PUMP_N ${PUMPKINS.length}
+        uniform vec4 uPump[PUMP_N];
+        uniform float uPumpOn[PUMP_N];
         uniform vec4 uDoor;
         uniform float uDoorArch, uDoorOpen, uDim, uFade;
         ${NOISE_GLSL}
@@ -699,9 +752,16 @@ export class LandingScene {
         }
         // A jack-o'-lantern whose candle goes out: the carved face goes black,
         // the rind and the leaves it lit drop to a dim cold tone.
+        // The mask is the carved face (bright) and the lit rind inside the body ellipse, plus
+        // the orange glow the flame throws on the leaves just round it.
         vec3 pumpkinLight(vec3 col, float lum0, float lit, vec2 px, vec4 box, float on) {
-          float core = smoothstep(0.5, 0.8, lum0) * (1.0 - smoothstep(0.55, 0.9, length((px - box.xy) / box.zw)));
-          float m = max(lightMask(px, box, 0.72) * lit, core);
+          if (abs(on - 1.0) < 0.002) return col;
+          float r = length((px - box.xy) / box.zw);
+          if (r > 1.6) return col;
+          float core = smoothstep(0.5, 0.8, lum0) * (1.0 - smoothstep(0.8, 1.0, r));
+          // the outer glow skips bright pixels, so a neighbouring pumpkin's own carved face is not touched
+          float spill = (1.0 - smoothstep(1.0, 1.35, r)) * lit * 0.5 * (1.0 - smoothstep(0.3, 0.5, lum0));
+          float m = max(max(lightMask(px, box, 0.72) * lit, spill), core);
           float face = smoothstep(0.32, 0.62, lum0);
           vec3 rind = col * vec3(0.26, 0.2, 0.2);
           vec3 dead = mix(rind, vec3(0.035, 0.022, 0.018), face);
@@ -798,36 +858,46 @@ export class LandingScene {
           float fog = smoothstep(0.45, 0.85, fbm(px / vec2(300.9, 54.4) + vec2(uTime * 0.05, 0.0)));
           col = mix(col, vec3(0.58, 0.63, 0.70), fog * fogBand * 0.26 * (1.0 - warm * 0.75));
 
-          // 4) Firelight is steady (no moving noise, so nothing "waves").
-          //    One tree lantern and one jack-o'-lantern blink on their own.
+          // 4) Firelight has no moving noise, so nothing "waves": each light is one value.
+          //    The tree lantern stutters now and then; the pumpkins flicker gently.
           float lum0 = luma(col);
           float litLoose = smoothstep(0.04, 0.22, col.r - col.b) * smoothstep(0.12, 0.35, col.r);
           {
             // Tree lantern: glass and the glow it throws on the bark go dark.
             // Wide, gradual falloff: the glow on the branches fades out with
             // distance instead of ending at a hard ring.
-            float glassPx = smoothstep(0.38, 0.7, lum0) * (1.0 - smoothstep(0.8, 1.0, length((px - uLamp.xy) / uLamp.zw)));
-            // the flame's white core is lit too (it has little red over blue, so litLoose misses it)
-            float m = max(lightMask(px, uLamp, 0.78) * litLoose, glassPx);
+            float lr = length((px - uLamp.xy) / uLamp.zw);
+            float glassPx = smoothstep(0.38, 0.7, lum0) * (1.0 - smoothstep(0.95, 1.12, lr));
+            // the flame's white core is lit too (it has little red over blue, so litLoose misses it);
+            // the warm glow on the branches fades out to 1.6 times the glass
+            float m = max((1.0 - smoothstep(0.9, 1.6, lr)) * litLoose, glassPx);
             vec3 bark = vec3(lum0) * vec3(0.5, 0.53, 0.64);          // moonlit, no firelight
             vec3 dead = mix(bark, vec3(0.06, 0.055, 0.06), glassPx);
             col = mix(col, dead, m * clamp(1.0 - uLampOn, 0.0, 1.0));
             col += col * m * max(uLampOn - 1.0, 0.0);              // brief flare on relight
           }
-          col = pumpkinLight(col, lum0, litLoose, px, uPumpA, uPumpAOn);
-          col = pumpkinLight(col, lum0, litLoose, px, uPumpB, uPumpBOn);
+          for (int i = 0; i < PUMP_N; i++) col = pumpkinLight(col, lum0, litLoose, px, uPump[i], uPumpOn[i]);
 
-          // 5) the blinking upstairs window
+          // 5) the upstairs window: dark at rest, it glows now and then (uWinOn)
           vec2 wl = (px - uWin.xy) / (uWin.zw - uWin.xy);
-          // feathered edges, and only the lit glass goes dark (not the frame)
-          float inWin = smoothstep(-0.04, 0.06, wl.x) * smoothstep(1.04, 0.94, wl.x)
-                      * smoothstep(-0.04, 0.06, wl.y) * smoothstep(1.04, 0.94, wl.y);
-          // lit glass = warm OR bright (the centre of a lit pane is almost white); the glow it throws on the frame dims too
+          // the glass box, feathered by about 1 px (the arch's dark corners fail the warmth test)
+          float inWin = smoothstep(-0.05, 0.05, wl.x) * smoothstep(1.05, 0.95, wl.x)
+                      * smoothstep(-0.03, 0.04, wl.y) * smoothstep(1.03, 0.96, wl.y);
+          // lit glass = warm OR bright (the centre of a lit pane is almost white)
           float hotPane = smoothstep(0.34, 0.6, luma(col)) * smoothstep(0.02, 0.1, col.r - col.b);
           float glass = inWin * max(warm, hotPane);
-          float halo = smoothstep(-0.45, 0.0, wl.x) * smoothstep(1.45, 1.0, wl.x) * smoothstep(-0.35, 0.0, wl.y) * smoothstep(1.35, 1.0, wl.y);
-          // the orange glow on the frame round it is dimmer than the glass, so a looser warmth test
+          // the orange glow on the frame and the wall round it (a looser warmth test: it is dimmer)
+          float halo = smoothstep(-0.5, 0.0, wl.x) * smoothstep(1.5, 1.0, wl.x) * smoothstep(-0.35, 0.0, wl.y) * smoothstep(1.4, 1.0, wl.y);
           float rimWarm = smoothstep(0.14, 0.4, col.r) * smoothstep(0.04, 0.18, col.r - col.b);
+          // a figure standing in the lit room: head and shoulders, backlit, cut off by the sill
+          vec2 wsz = uWin.zw - uWin.xy;
+          // soft edges (a figure a few metres back from the glass, not a cut-out); sloping shoulders
+          vec2 hq = (px - (uWin.xy + wsz * vec2(0.55, 0.42))) / (wsz.x * vec2(0.13, 0.16));
+          vec2 nq = (px - (uWin.xy + wsz * vec2(0.55, 0.62))) / (wsz.x * vec2(0.08, 0.14));
+          vec2 sq = (px - (uWin.xy + wsz * vec2(0.55, 1.1))) / (wsz.x * vec2(0.42, 0.5));
+          float body = max(max(1.0 - smoothstep(0.75, 1.1, length(hq)), 1.0 - smoothstep(0.75, 1.1, length(nq))),
+                           1.0 - smoothstep(0.8, 1.1, length(sq)));
+          col = mix(col, col * vec3(0.1, 0.07, 0.06), glass * body * uWinSil * uWinOn);
           col = mix(col, col * vec3(0.4, 0.36, 0.44), halo * rimWarm * (1.0 - uWinOn) * 0.85);
           col = mix(col, col * vec3(0.07, 0.06, 0.08), glass * (1.0 - uWinOn));
 
@@ -1220,9 +1290,8 @@ export class LandingScene {
     this.updateRain(delta)
     this.updateWindow(delta)
     const u = this.uniforms
-    u.uLampOn.value = this.updateBlinker(this.lampBlink, LANTERN_BLINK, delta, 0.6, 1.0, u.uLampOn.value)
-    u.uPumpAOn.value = this.updateBlinker(this.pumpABlink, PUMPKIN_BLINK, delta, 0.8, 1.0, u.uPumpAOn.value)
-    u.uPumpBOn.value = this.updateBlinker(this.pumpBBlink, PUMPKIN_BLINK, delta, 1.0, 1.2, u.uPumpBOn.value)
+    u.uLampOn.value = this.updateBlinker(this.lampBlink, LANTERN_BLINK, delta, 4, 4, u.uLampOn.value)
+    this.updatePumpkins(t, delta)
     this.updateLightning(delta)
     this.updateEnter(delta)
 
@@ -1254,6 +1323,7 @@ export class LandingScene {
       heightPx = ARJUN_HEIGHT * heightAt(fy) / heightAt(ARJUN_FEET.y)
       this.setArjunDarkness(THREE.MathUtils.smoothstep(et, ENTER.stepIn + 0.5, ENTER.stepInEnd))
     }
+    this.arjunFeetY = fy
     const heading = this.walkHeading
     const feet = this.toScreen(fx, fy)
     const unit = (heightPx / 0.975) * this.mapScale // model height ≈ 0.975 units
@@ -1366,8 +1436,8 @@ export class LandingScene {
     this.enterDone = onDone
     this.enterFrom.rot = this.arjunInner.rotation.y
     this.nextFlash = 1e9                         // no lightning over the door sounds
-    this.nextBlink = 1e9                         // the upstairs window stays lit
-    if (this.blinkT >= 0) { this.blinkT = -1; this.uniforms.uWinOn.value = 1 }
+    this.nextBlink = 1e9                         // the upstairs window stays dark
+    if (this.blinkT >= 0) { this.blinkT = -1; this.uniforms.uWinOn.value = 0; this.uniforms.uWinSil.value = 0 }
     if (!this.ctx) void this.enableAudio()
     const ctx = this.ctx
     const begin = (buffer: AudioBuffer | null) => {
@@ -1517,25 +1587,69 @@ export class LandingScene {
     return current + (target - current) * Math.min(1, delta * 25)
   }
 
-  /** The upstairs window light stutters off and back on every few seconds. */
+  /**
+   * The jack-o'-lanterns flicker like candles: each flame is one value (no spatial noise), so the
+   * light never "waves". A steady wobble (about 0.8 to 1.15, its own phase per pumpkin) times a
+   * gutter every few seconds (PUMPKIN_GUTTER, down to 0.2 then a flare). Once Arjun's feet pass
+   * SNUFF_AT_Y on the walk, the SNUFF_PUMPKIN flame flares once and goes out for good.
+   */
+  private updatePumpkins(t: number, delta: number): void {
+    const on = this.uniforms.uPumpOn.value
+    const { base, spread } = PUMPKIN_GUTTER_EVERY
+    for (let i = 0; i < on.length; i++) {
+      const p = i * 1.7
+      const wobble = 0.97 + 0.1 * Math.sin(t * 2.3 + p) + 0.07 * Math.sin(t * 6.1 + p * 2.3) + 0.04 * Math.sin(t * 11.7 + p * 0.7)
+      this.pumpGutter[i] = this.updateBlinker(this.pumpBlink[i], PUMPKIN_GUTTER, delta, base, spread, this.pumpGutter[i])
+      on[i] = wobble * this.pumpGutter[i]
+    }
+    const et = this.enterTime()
+    if (et === null) return
+    if (this.snuffAt === null && this.arjunFeetY <= SNUFF_AT_Y) this.snuffAt = et
+    if (this.snuffAt === null) return
+    const k = et - this.snuffAt
+    let level = SNUFF_KEYS[0][1]
+    for (let j = 1; j < SNUFF_KEYS.length; j++) {
+      const [t0, v0] = SNUFF_KEYS[j - 1], [t1, v1] = SNUFF_KEYS[j]
+      if (k >= t1) level = v1
+      else if (k >= t0) { level = v0 + (v1 - v0) * (k - t0) / (t1 - t0); break }
+    }
+    on[SNUFF_PUMPKIN] = level
+  }
+
+  /**
+   * The upstairs window is dark; every 9-14 s it glows for about 2.5 s, then goes dark again.
+   * A figure stands in it on the first glow and every other one, and is gone the moment
+   * lightning flashes (plan, 10-15 s: "When lightning flashes again, the silhouette is gone").
+   * Figure glows are timed against the lightning schedule so that flash comes mid-glow.
+   */
   private updateWindow(delta: number): void {
+    const u = this.uniforms
     if (this.blinkT < 0) {
       this.blinkTimer += delta
       if (this.blinkTimer < this.nextBlink) return
+      // A glow with the figure waits until the next flash is 1.5-2.1 s away, so the flash
+      // lands while the window is still lit (it holds until 2.2 s) and the figure vanishes in it.
+      const figure = this.winGlows % 2 === 0
+      const toFlash = this.flashT < 0 ? this.nextFlash - this.flashTimer : -1
+      if (figure && !(toFlash >= 1.5 && toFlash <= 2.1)) return
       this.blinkTimer = 0
-      this.nextBlink = 6 + Math.random() * 3
+      this.nextBlink = 9 + Math.random() * 5
       this.blinkT = 0
+      this.winSilGone = false
+      u.uWinSil.value = figure ? 1 : 0
+      this.winGlows++
     }
     this.blinkT += delta
     const t = this.blinkT
-    // Light: stutter off, back on, hold, stutter, steady.
-    const on =
-      t < 0.12 ? 0 : t < 0.2 ? 1 : t < 0.42 ? 0 : t < 1.6 ? 1 :
-      t < 1.7 ? 0 : t < 1.78 ? 1 : t < 1.93 ? 0 : 1
-    this.uniforms.uWinOn.value = on
-    if (t > 2.1) {
+    let level = 0
+    for (const [at, v] of WINDOW_GLOW) if (t >= at) level = v
+    u.uWinOn.value += (level - u.uWinOn.value) * Math.min(1, delta * 25)
+    if (u.uFlash.value > 0.25) this.winSilGone = true
+    if (this.winSilGone) u.uWinSil.value = 0
+    if (t > WINDOW_GLOW[WINDOW_GLOW.length - 1][0] + 0.3) {
       this.blinkT = -1
-      this.uniforms.uWinOn.value = 1
+      u.uWinOn.value = 0
+      u.uWinSil.value = 0
     }
   }
 

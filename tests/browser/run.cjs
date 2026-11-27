@@ -1,11 +1,13 @@
 // npm run test:browser [-- name ...]: runs browser checks one after another.
 // Names: level1 (default), guest, signin, level (LEVEL=2|3), death (LEVEL=2|3), titlecard,
 // mobile (a phone held sideways: title, landing, hall by touch), mobile2 (sign-in and a room
-// answered by touch; LEVEL, STAGE, OBJ), mobile3 (a phone held upright), mobile4 (full screen and the install manifest), candle (one press picks it up), phoneperf (frame rate on a slowed phone), phonesound (sound on a phone under the real autoplay rule).
+// answered by touch; LEVEL, STAGE, OBJ), mobile3 (a phone held upright), mobile4 (full screen and the install manifest), candle (one press picks it up), phoneperf (frame rate on a slowed phone), phonesound (sound on a phone under the real autoplay rule), lights (where the landing's lantern,
+// pumpkin and window effects act, in painting px), responsive (text size and fit on laptops and phones),
+// pumpkins (the jack-o'-lanterns visibly flicker, read back from the picture).
 // Needs the dev server: npm run dev.
 const { spawnSync } = require('child_process')
 const path = require('path')
-const ALL = ['level1', 'guest', 'signin', 'level', 'death', 'titlecard', 'mobile', 'mobile2', 'mobile3', 'mobile4', 'candle', 'phoneperf', 'phonesound']
+const ALL = ['level1', 'guest', 'signin', 'level', 'death', 'titlecard', 'mobile', 'mobile2', 'mobile3', 'mobile4', 'candle', 'phoneperf', 'phonesound', 'lights', 'responsive', 'pumpkins']
 let names = process.argv.slice(2)
 if (!names.length) names = ['level1']
 if (names[0] === 'all') names = ALL

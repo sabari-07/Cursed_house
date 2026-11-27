@@ -34,6 +34,17 @@
         width: 100%;
         height: 100%;
       }
+      /*
+       * One size for the whole UI: every component's CSS is in rem, so this scales all text,
+       * panels and buttons together. Phones and small windows (the compact layout in the
+       * components starts below 761 x 561) keep 16 px. Laptops and bigger screens grow with
+       * the screen: 17 px at 1280 x 720, 19 px at 1536 x 864, 21.6 px at 1920 x 1080, at most 26 px.
+       * The height term keeps a short, wide window from overflowing.
+       */
+      html { font-size: 16px; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+      @media (min-width: 761px) and (min-height: 561px) {
+        html { font-size: clamp(17px, calc(8px + 0.4vw + 0.55vh), 26px); }
+      }
       /* Touch screens: every button is at least 40 px tall, easy to hit with a thumb */
       @media (pointer: coarse) {
         button { min-height: 40px; }

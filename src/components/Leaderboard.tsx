@@ -78,19 +78,19 @@ export function Leaderboard({ me, onClose }: Props) {
       </section>
       <style>{`
         .lb-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(0, 0, 0, .6); }
-        .lb { width: min(640px, 94vw); max-height: 84vh; overflow: auto; padding: 22px 24px 16px; color: #efe3cb; font-family: Georgia, 'Times New Roman', serif;
+        .lb { width: min(40rem, 94vw); max-height: 84vh; overflow: auto; padding: 1.375rem 1.5rem 1rem; color: #efe3cb; font-family: Georgia, 'Times New Roman', serif;
           background: linear-gradient(180deg, rgba(16, 12, 9, .97), rgba(8, 6, 5, .97)); border: 1px solid rgba(243, 218, 172, .4);
-          box-shadow: 0 0 40px rgba(240, 142, 38, .14), 0 20px 60px rgba(0, 0, 0, .7); }
-        .lb h2 { margin: 0 0 14px; text-align: center; font: normal clamp(26px, 3vw, 36px) 'Creepster', Georgia, serif; letter-spacing: .08em; color: #c8141b;
-          text-shadow: 2px 2px 0 #1a0000, 0 0 14px rgba(160, 0, 0, .6); }
-        .lb table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        .lb th { font: 10px Georgia, serif; letter-spacing: .18em; text-transform: uppercase; color: #c9a45e; text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(201, 164, 94, .35); }
-        .lb td { padding: 7px 8px; border-bottom: 1px solid rgba(243, 218, 172, .08); font-variant-numeric: tabular-nums; }
+          box-shadow: 0 0 2.5rem rgba(240, 142, 38, .14), 0 1.25rem 3.75rem rgba(0, 0, 0, .7); }
+        .lb h2 { margin: 0 0 .875rem; text-align: center; font: normal clamp(1.625rem, 3vw, 2.25rem) 'Creepster', Georgia, serif; letter-spacing: .08em; color: #c8141b;
+          text-shadow: 2px 2px 0 #1a0000, 0 0 .875rem rgba(160, 0, 0, .6); }
+        .lb table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+        .lb th { font: .7188rem Georgia, serif; letter-spacing: .18em; text-transform: uppercase; color: #c9a45e; text-align: left; padding: .375rem .5rem; border-bottom: 1px solid rgba(201, 164, 94, .35); }
+        .lb td { padding: .4375rem .5rem; border-bottom: 1px solid rgba(243, 218, 172, .08); font-variant-numeric: tabular-nums; }
         .lb tr.is-me td { color: #f0b356; background: rgba(240, 179, 86, .08); }
-        .lb-note { margin: 10px 0 0; font-size: 11px; font-style: italic; color: rgba(239, 227, 203, .5); text-align: center; }
-        .lb-actions { display: flex; justify-content: center; gap: 10px; margin-top: 14px; }
-        .lb-actions button { font: 11px Georgia, serif; letter-spacing: .2em; color: rgba(239, 227, 203, .8); background: transparent;
-          border: 1px solid rgba(243, 218, 172, .35); padding: 7px 12px; cursor: pointer; }
+        .lb-note { margin: .625rem 0 0; font-size: .75rem; font-style: italic; color: rgba(239, 227, 203, .5); text-align: center; }
+        .lb-actions { display: flex; justify-content: center; gap: .625rem; margin-top: .875rem; }
+        .lb-actions button { font: .75rem Georgia, serif; letter-spacing: .2em; color: rgba(239, 227, 203, .8); background: transparent;
+          border: 1px solid rgba(243, 218, 172, .35); padding: .4375rem .75rem; cursor: pointer; }
         .lb-actions button:hover { color: #fff3dd; border-color: rgba(243, 218, 172, .75); }
       `}</style>
     </div>

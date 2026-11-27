@@ -107,9 +107,9 @@ export function AccountPanel({ onDone, onClose, mode: firstMode = 'signin', scen
         </section>
         <style>{`
           .acct-code { text-align: center; }
-          .acct-code-title { margin: 0; font: 22px 'Creepster', Georgia, serif; letter-spacing: .08em; color: #c8141b; }
-          .acct-code-value { margin: 6px 0; font: 26px 'Courier New', monospace; letter-spacing: .12em; color: #f0b356; user-select: all; -webkit-user-select: all;
-            padding: 10px; border: 1px dashed rgba(240, 179, 86, .6); background: rgba(0, 0, 0, .45); }
+          .acct-code-title { margin: 0; font: 1.375rem 'Creepster', Georgia, serif; letter-spacing: .08em; color: #c8141b; }
+          .acct-code-value { margin: .375rem 0; font: 1.625rem 'Courier New', monospace; letter-spacing: .12em; color: #f0b356; user-select: all; -webkit-user-select: all;
+            padding: .625rem; border: 1px dashed rgba(240, 179, 86, .6); background: rgba(0, 0, 0, .45); }
         `}</style>
       </>) : (
       <form key={shake} className={`acct ${shake ? 'is-shaking' : ''}`} onClick={e => e.stopPropagation()} onSubmit={submit}
@@ -160,43 +160,43 @@ export function AccountPanel({ onDone, onClose, mode: firstMode = 'signin', scen
         @keyframes acctOut { to { opacity: 0; } }
         /* a phone held sideways (and its keyboard open): a tighter box that scrolls instead of being cut off */
         @media (max-height: 560px) {
-          .acct-backdrop { overflow-y: auto; place-items: start center; padding: 8px 0; }
-          .acct { gap: 7px; padding: 12px 18px 10px; width: min(420px, 70vw); }
-          .acct input { padding: 6px 9px; font-size: 16px; }
-          .acct-go { padding: 8px; margin-top: 2px; }
+          .acct-backdrop { overflow-y: auto; place-items: start center; padding: .5rem 0; }
+          .acct { gap: .4375rem; padding: .75rem 1.125rem .625rem; width: min(26.25rem, 70vw); }
+          .acct input { padding: .375rem .5625rem; font-size: 1rem; }
+          .acct-go { padding: .5rem; margin-top: 2px; }
           .acct-note { display: none; }
-          .acct-tabs button { padding: 6px; }
+          .acct-tabs button { padding: .375rem; }
           .acct label { gap: 2px; }
         }
         /* a wrong password: the box is struck and rattles side to side, settling */
         .acct.is-shaking { animation: acctShake ${SHAKE_MS}ms cubic-bezier(.36, .07, .19, .97) both; }
         @keyframes acctShake {
-          0% { transform: translateX(0); } 8% { transform: translateX(-14px) rotate(-1deg); } 20% { transform: translateX(12px) rotate(.8deg); }
-          32% { transform: translateX(-10px) rotate(-.6deg); } 46% { transform: translateX(8px); } 60% { transform: translateX(-5px); }
-          74% { transform: translateX(3px); } 88% { transform: translateX(-1px); } 100% { transform: translateX(0); } }
-        .acct-forgot { margin-top: -4px; font: italic 12px Georgia, serif; color: rgba(240, 179, 86, .9); background: transparent; border: 0;
-          cursor: pointer; padding: 2px; text-decoration: underline; text-underline-offset: 3px; }
+          0% { transform: translateX(0); } 8% { transform: translateX(-.875rem) rotate(-1deg); } 20% { transform: translateX(.75rem) rotate(.8deg); }
+          32% { transform: translateX(-.625rem) rotate(-.6deg); } 46% { transform: translateX(.5rem); } 60% { transform: translateX(-.3125rem); }
+          74% { transform: translateX(.1875rem); } 88% { transform: translateX(-1px); } 100% { transform: translateX(0); } }
+        .acct-forgot { margin-top: -.25rem; font: italic .75rem Georgia, serif; color: rgba(240, 179, 86, .9); background: transparent; border: 0;
+          cursor: pointer; padding: 2px; text-decoration: underline; text-underline-offset: .1875rem; }
         .acct-forgot:hover { color: #ffd38a; }
         @media (prefers-reduced-motion: reduce) { .acct.is-shaking { animation: none; } }
-        .acct { position: relative; width: min(380px, 90vw); display: grid; gap: 12px; padding: 22px 24px 18px; color: #efe3cb; font-family: Georgia, 'Times New Roman', serif;
+        .acct { position: relative; width: min(23.75rem, 90vw); display: grid; gap: .75rem; padding: 1.375rem 1.5rem 1.125rem; color: #efe3cb; font-family: Georgia, 'Times New Roman', serif;
           background: linear-gradient(180deg, rgba(16, 12, 9, .94), rgba(8, 6, 5, .94)); border: 1px solid rgba(243, 218, 172, .4);
-          box-shadow: 0 0 40px rgba(240, 142, 38, .14), 0 20px 60px rgba(0, 0, 0, .7); }
-        .acct-tabs { display: flex; gap: 6px; }
-        .acct-tabs button { flex: 1; font: 11px Georgia, serif; letter-spacing: .18em; padding: 8px 6px; cursor: pointer; color: rgba(239, 227, 203, .6);
+          box-shadow: 0 0 2.5rem rgba(240, 142, 38, .14), 0 1.25rem 3.75rem rgba(0, 0, 0, .7); }
+        .acct-tabs { display: flex; gap: .375rem; }
+        .acct-tabs button { flex: 1; font: .75rem Georgia, serif; letter-spacing: .18em; padding: .5rem .375rem; cursor: pointer; color: rgba(239, 227, 203, .6);
           background: transparent; border: 1px solid rgba(243, 218, 172, .2); }
         .acct-tabs button.is-on { color: #f6ead2; border-color: rgba(243, 218, 172, .7); background: rgba(87, 38, 12, .4); }
-        .acct label { position: relative; display: grid; gap: 4px; font-size: 12px; letter-spacing: .08em; color: rgba(239, 227, 203, .75); }
-        .acct input { font: 16px Georgia, serif; color: #f6ead2; background: rgba(0, 0, 0, .45); border: 1px solid rgba(243, 218, 172, .35); padding: 8px 10px; }
+        .acct label { position: relative; display: grid; gap: .25rem; font-size: .75rem; letter-spacing: .08em; color: rgba(239, 227, 203, .75); }
+        .acct input { font: 1rem Georgia, serif; color: #f6ead2; background: rgba(0, 0, 0, .45); border: 1px solid rgba(243, 218, 172, .35); padding: .5rem .625rem; }
         .acct input:focus { outline: none; border-color: #f0b356; box-shadow: 0 0 0 2px rgba(240, 179, 86, .25); }
-        .acct-hint { margin: 0; font-size: 11px; font-style: italic; color: rgba(239, 227, 203, .55); }
-        .acct-error { margin: 0; font-size: 13px; color: #e0453a; }
-        .acct-go { font: 12px Georgia, serif; letter-spacing: .22em; color: #f6ead2; cursor: pointer; padding: 10px; margin-top: 4px;
+        .acct-hint { margin: 0; font-size: .75rem; font-style: italic; color: rgba(239, 227, 203, .55); }
+        .acct-error { margin: 0; font-size: .8125rem; color: #e0453a; }
+        .acct-go { font: .75rem Georgia, serif; letter-spacing: .22em; color: #f6ead2; cursor: pointer; padding: .625rem; margin-top: .25rem;
           background: linear-gradient(180deg, #5a2a10, #2e1408); border: 1px solid rgba(240, 180, 110, .6); }
         .acct-go:disabled { opacity: .5; cursor: wait; }
-        .acct-carry { margin: 0; font-size: 12px; color: #f0b356; text-align: center; }
- .acct-guest { font: italic 12px Georgia, serif; letter-spacing: .06em; color: rgba(240, 179, 86, .9); background: transparent; border: 0; cursor: pointer; padding: 2px; text-decoration: underline; text-underline-offset: 3px; }
+        .acct-carry { margin: 0; font-size: .75rem; color: #f0b356; text-align: center; }
+ .acct-guest { font: italic .75rem Georgia, serif; letter-spacing: .06em; color: rgba(240, 179, 86, .9); background: transparent; border: 0; cursor: pointer; padding: 2px; text-decoration: underline; text-underline-offset: .1875rem; }
  .acct-guest:hover { color: #ffd38a; }
- .acct-note { margin: 0; font-size: 11px; text-align: center; color: rgba(239, 227, 203, .45); }
+ .acct-note { margin: 0; font-size: .75rem; text-align: center; color: rgba(239, 227, 203, .45); }
         @keyframes acctIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
     </div>

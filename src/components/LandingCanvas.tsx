@@ -117,15 +117,15 @@ export function LandingCanvas({ onScene, entering = false, active = true, canBui
         }
         .landing-curtain.is-open { opacity: 0; }
         .landing-sound {
-          position: absolute; top: 18px; right: 20px; z-index: 20;
+          position: absolute; top: 1.125rem; right: 1.25rem; z-index: 20;
           border: 1px solid rgba(240, 215, 170, 0.55); color: #f2e6d2;
-          background: rgba(8, 6, 4, 0.55); backdrop-filter: blur(4px);
-          padding: 8px 12px; font: 10px Georgia, serif; letter-spacing: .18em; cursor: pointer;
+          background: rgba(8, 6, 4, 0.55); backdrop-filter: blur(.25rem);
+          padding: .5rem .75rem; font: .7188rem Georgia, serif; letter-spacing: .18em; cursor: pointer;
         }
         .landing-sound.is-waiting { animation: soundPulse 1.8s ease-in-out infinite; }
         @keyframes soundPulse {
           0%, 100% { box-shadow: 0 0 0 rgba(255, 150, 60, 0); }
-          50% { box-shadow: 0 0 16px rgba(255, 150, 60, 0.55); }
+          50% { box-shadow: 0 0 1rem rgba(255, 150, 60, 0.55); }
         }
       `}</style>
     </div>

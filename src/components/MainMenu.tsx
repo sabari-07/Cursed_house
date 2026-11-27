@@ -150,51 +150,51 @@ export function MainMenu({ onExit }: Props) {
         .landing-menu { position: fixed; inset: 0; overflow: hidden; }
         .landing-actions {
           position: fixed; z-index: 12;
-          right: clamp(18px, 3vw, 44px); bottom: clamp(18px, 4vh, 40px);
-          display: grid; justify-items: end; gap: 8px;
+          right: clamp(1.125rem, 3vw, 2.75rem); bottom: clamp(1.125rem, 4vh, 2.5rem);
+          display: grid; justify-items: end; gap: .5rem;
         }
         .enter-bungalow-button {
           font-family: Georgia, 'Times New Roman', serif; color: #f3e9d7; cursor: pointer; text-transform: uppercase;
-          background: rgba(7, 9, 12, 0.48); backdrop-filter: blur(5px);
-          min-width: min(280px, 70vw); padding: 13px 24px;
+          background: rgba(7, 9, 12, 0.48); backdrop-filter: blur(.3125rem);
+          min-width: min(17.5rem, 70vw); padding: .8125rem 1.5rem;
           border: 1px solid rgba(243, 218, 172, 0.72);
-          box-shadow: 0 0 22px rgba(240, 142, 38, 0.18), inset 0 0 16px rgba(255, 166, 55, 0.06);
-          font-size: clamp(12px, 1.4vw, 16px); letter-spacing: 0.21em;
+          box-shadow: 0 0 1.375rem rgba(240, 142, 38, 0.18), inset 0 0 1rem rgba(255, 166, 55, 0.06);
+          font-size: clamp(.75rem, 1.4vw, 1rem); letter-spacing: 0.21em;
           transition: background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
         }
         .enter-bungalow-button:hover, .enter-bungalow-button:focus-visible {
           background: rgba(87, 38, 12, 0.65);
-          box-shadow: 0 0 35px rgba(255, 139, 29, 0.42), inset 0 0 20px rgba(255, 180, 74, 0.14);
+          box-shadow: 0 0 2.1875rem rgba(255, 139, 29, 0.42), inset 0 0 1.25rem rgba(255, 180, 74, 0.14);
           outline: none; transform: translateY(-2px);
         }
 
-        .player-card { position: fixed; z-index: 12; left: clamp(18px, 3vw, 44px); bottom: clamp(18px, 4vh, 40px); display: grid; gap: 6px;
-          font-family: Georgia, 'Times New Roman', serif; color: #f3e9d7; padding: 12px 16px; max-width: min(360px, 60vw);
-          background: rgba(7, 9, 12, 0.48); backdrop-filter: blur(5px); border: 1px solid rgba(243, 218, 172, 0.3); }
-        .player-name { font-size: 17px; letter-spacing: .06em; }
-        .player-where { font-size: 12px; color: rgba(243, 233, 215, .7); }
-        .player-treasures { display: flex; gap: 8px; margin-top: 2px; }
-        .treasure-slot { width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(243, 218, 172, .35); background: rgba(0, 0, 0, .3); }
+        .player-card { position: fixed; z-index: 12; left: clamp(1.125rem, 3vw, 2.75rem); bottom: clamp(1.125rem, 4vh, 2.5rem); display: grid; gap: .375rem;
+          font-family: Georgia, 'Times New Roman', serif; color: #f3e9d7; padding: .75rem 1rem; max-width: min(22.5rem, 60vw);
+          background: rgba(7, 9, 12, 0.48); backdrop-filter: blur(.3125rem); border: 1px solid rgba(243, 218, 172, 0.3); }
+        .player-name { font-size: 1.0625rem; letter-spacing: .06em; }
+        .player-where { font-size: .75rem; color: rgba(243, 233, 215, .7); }
+        .player-treasures { display: flex; gap: .5rem; margin-top: 2px; }
+        .treasure-slot { width: 1.625rem; height: 1.625rem; border-radius: 50%; border: 1px solid rgba(243, 218, 172, .35); background: rgba(0, 0, 0, .3); }
         /* a won treasure shows its own picture */
-        .treasure-slot.is-won { border-color: #f0b356; background-color: #5a3a10; background-size: cover; background-position: center; box-shadow: 0 0 10px rgba(240, 179, 86, .6); }
-        .player-actions { display: flex; gap: 8px; margin-top: 4px; }
-        .player-actions button { font: 10px Georgia, serif; letter-spacing: .2em; color: rgba(243, 233, 215, .8); background: transparent;
-          border: 1px solid rgba(243, 218, 172, .35); padding: 6px 10px; cursor: pointer; }
-        .player-guest { font-size: 11px; font-style: italic; color: rgba(243, 233, 215, .6); max-width: 300px; }
+        .treasure-slot.is-won { border-color: #f0b356; background-color: #5a3a10; background-size: cover; background-position: center; box-shadow: 0 0 .625rem rgba(240, 179, 86, .6); }
+        .player-actions { display: flex; gap: .5rem; margin-top: .25rem; }
+        .player-actions button { font: .7188rem Georgia, serif; letter-spacing: .2em; color: rgba(243, 233, 215, .8); background: transparent;
+          border: 1px solid rgba(243, 218, 172, .35); padding: .375rem .625rem; cursor: pointer; }
+        .player-guest { font-size: .75rem; font-style: italic; color: rgba(243, 233, 215, .6); max-width: 18.75rem; }
         .player-actions { flex-wrap: wrap; }
-        .player-actions button.is-guest { font-size: 11px; padding: 8px 14px; color: #f0b356; border-color: rgba(240, 179, 86, .55); }
-        .player-actions button.is-main { font-size: 11px; padding: 8px 14px; color: #f6ead2; border-color: rgba(243, 218, 172, .6); background: rgba(87, 38, 12, .35); }
+        .player-actions button.is-guest { font-size: .75rem; padding: .5rem .875rem; color: #f0b356; border-color: rgba(240, 179, 86, .55); }
+        .player-actions button.is-main { font-size: .75rem; padding: .5rem .875rem; color: #f6ead2; border-color: rgba(243, 218, 172, .6); background: rgba(87, 38, 12, .35); }
  .player-actions button:hover { color: #fff5e5; border-color: rgba(243, 218, 172, .75); }
 
         .soon-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(0, 0, 0, .6); }
-        .soon { width: min(460px, 90vw); text-align: center; padding: 26px 28px 20px; color: #efe3cb; font-family: Georgia, 'Times New Roman', serif;
+        .soon { width: min(28.75rem, 90vw); text-align: center; padding: 1.625rem 1.75rem 1.25rem; color: #efe3cb; font-family: Georgia, 'Times New Roman', serif;
           background: linear-gradient(180deg, rgba(16, 12, 9, .97), rgba(8, 6, 5, .97)); border: 1px solid rgba(200, 20, 27, .45); }
-        .soon-level { font: clamp(30px, 4vw, 48px) 'Creepster', Georgia, serif; color: #c8141b; letter-spacing: .08em; text-shadow: 2px 2px 0 #1a0000, 0 0 14px rgba(160, 0, 0, .6); }
-        .soon h2 { margin: 4px 0 10px; font-weight: normal; letter-spacing: .06em; }
-        .soon p { margin: 0 0 8px; font-style: italic; color: rgba(239, 227, 203, .8); }
+        .soon-level { font: clamp(1.875rem, 4vw, 3rem) 'Creepster', Georgia, serif; color: #c8141b; letter-spacing: .08em; text-shadow: 2px 2px 0 #1a0000, 0 0 .875rem rgba(160, 0, 0, .6); }
+        .soon h2 { margin: .25rem 0 .625rem; font-weight: normal; letter-spacing: .06em; }
+        .soon p { margin: 0 0 .5rem; font-style: italic; color: rgba(239, 227, 203, .8); }
         .soon-won { color: #f0b356 !important; }
-        .soon button { margin-top: 10px; font: 11px Georgia, serif; letter-spacing: .2em; color: rgba(239, 227, 203, .8); background: transparent;
-          border: 1px solid rgba(243, 218, 172, .35); padding: 7px 14px; cursor: pointer; }
+        .soon button { margin-top: .625rem; font: .75rem Georgia, serif; letter-spacing: .2em; color: rgba(239, 227, 203, .8); background: transparent;
+          border: 1px solid rgba(243, 218, 172, .35); padding: .4375rem .875rem; cursor: pointer; }
       `}</style>
     </main>
   )

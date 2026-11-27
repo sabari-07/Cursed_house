@@ -484,7 +484,7 @@ export function TitleCard({ onDone, onTyped }: { onDone: () => void; /** the tit
         .tc-sky { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
  .tc-vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 60%, rgba(0, 0, 0, .32) 100%); }
         .tc-body { position: absolute; left: 0; right: 0; top: 14vh; text-align: center; padding: 0 4vw; }
-        .tc-title { --blood: #b10e14; margin: 0; font: normal clamp(42px, 7.6vw, 124px) 'Creepster', Georgia, serif; letter-spacing: .04em; line-height: 1; white-space: nowrap; }
+        .tc-title { --blood: #b10e14; margin: 0; font: normal clamp(42px, 7.6vw, 150px) 'Creepster', Georgia, serif; letter-spacing: .04em; line-height: 1; white-space: nowrap; }
         .tc-letter { position: relative; display: inline-block; opacity: 0; color: #b10f16;
           -webkit-text-fill-color: var(--blood);
           filter: drop-shadow(2px 3px 0 #1a0000) drop-shadow(0 0 12px rgba(170, 0, 0, .55)); }
@@ -499,16 +499,17 @@ export function TitleCard({ onDone, onTyped }: { onDone: () => void; /** the tit
         /* a teardrop lets go of the bead and falls */
         .tc-drip svg.tc-drop { position: absolute; opacity: 0; animation: tcFall 1.1s cubic-bezier(.5, 0, 1, 1) both; }
         @keyframes tcFall { 0% { opacity: 1; transform: translateY(0) scaleY(.8); } 15% { transform: translateY(4px) scaleY(1.15); } 90% { opacity: 1; } 100% { opacity: 0; transform: translateY(55vh); } }
+        /* the words under the title are in rem, so they grow with the UI size set in index.html */
         .tc-about { margin-top: clamp(70px, 14vh, 140px); color: #d9c7a6; font-family: Georgia, 'Times New Roman', serif; opacity: 0; transform: translateY(8px);
           transition: opacity 1.2s ease, transform 1.2s ease; text-shadow: 0 0 8px #000, 0 0 2px #000; }
         .tc-about.is-in { opacity: 1; transform: none; }
-        .tc-sub { font: clamp(14px, 1.6vw, 20px) Georgia, serif; letter-spacing: .5em; color: #e6d2ac; margin-bottom: 14px; }
-        .tc-about p { margin: 4px 0; font-size: clamp(14px, 1.4vw, 18px); font-style: italic; }
+        .tc-sub { font: clamp(1rem, 1.7vw, 1.5rem) Georgia, serif; letter-spacing: .5em; color: #e6d2ac; margin-bottom: .8em; }
+        .tc-about p { margin: .25em 0; font-size: clamp(1rem, 1.45vw, 1.35rem); font-style: italic; }
         /* The loader: transform-only CSS animations over the card's length, so
            they keep moving on the compositor while the landing loads. */
         .tc-loader { position: absolute; left: 50%; bottom: 8vh; padding: 16px 40px 0;
           background: radial-gradient(ellipse 58% 90% at 50% 55%, rgba(0, 0, 0, .85) 30%, transparent 100%); width: min(560px, 74vw); transform: translateX(-50%); text-align: center; }
-        .tc-loader-label { font: 13px Georgia, serif; letter-spacing: .4em; color: rgba(240, 222, 188, .95); margin-bottom: 58px;
+        .tc-loader-label { font: .9rem Georgia, serif; letter-spacing: .4em; color: rgba(240, 222, 188, .95); margin-bottom: 58px;
           text-shadow: 0 0 4px #000, 0 0 10px #000, 0 0 2px #000; animation: tcBreathe 2.4s ease-in-out infinite; }
         @keyframes tcBreathe { 50% { opacity: .5; } }
         .tc-track { position: relative; height: 6px; border-radius: 3px; background: rgba(10, 4, 4, .75);
@@ -526,19 +527,19 @@ export function TitleCard({ onDone, onTyped }: { onDone: () => void; /** the tit
           animation: tcBob .9s ease-in-out infinite; }
         /* she cackles as she goes: a little bob and a tilt */
         @keyframes tcBob { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-5px) rotate(6deg); } }
-        .tc-hint { position: absolute; bottom: 4vh; margin: 0; font: italic 12px Georgia, serif; letter-spacing: .14em; color: rgba(217, 199, 166, .55); }
+        .tc-hint { position: absolute; bottom: 4vh; margin: 0; font: italic .8rem Georgia, serif; letter-spacing: .14em; color: rgba(217, 199, 166, .55); }
         /* a phone held sideways: the same card, sized to the short screen (the drips are drawn in px, so they are scaled) */
         @media (max-height: 560px) {
           .tc-body { top: 7vh; }
           .tc-title { font-size: min(7.6vw, 17vh); }
           .tc-drip { transform: scale(.55); transform-origin: 50% 0; }
           .tc-about { margin-top: 15vh; }
-          .tc-sub { font-size: 11px; letter-spacing: .4em; margin-bottom: 6px; }
-          .tc-about p { font-size: 11.5px; margin: 2px 0; }
+          .tc-sub { font-size: 12.5px; letter-spacing: .4em; margin-bottom: 6px; }
+          .tc-about p { font-size: 12.5px; margin: 2px 0; }
           .tc-loader { bottom: 5vh; padding-top: 8px; }
-          .tc-loader-label { font-size: 10px; margin-bottom: 30px; }
+          .tc-loader-label { font-size: 11.5px; margin-bottom: 30px; }
           .tc-head { width: 64px; height: 50px; margin: -28px 0 0 -32px; }
-          .tc-hint { bottom: 1.5vh; font-size: 10px; }
+          .tc-hint { bottom: 1.5vh; font-size: 11px; }
         }
         /* phones: one text shadow instead of two blurred drop-shadow filters (those were redrawn every frame) */
         @media (pointer: coarse) {

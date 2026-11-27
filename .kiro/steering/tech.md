@@ -17,7 +17,10 @@
 - Unit and property tests: `npm test` (167 tests, ~15 s; fast-check property tests in `progress.test.ts` and `leaderboard.test.ts`).
 - Dev server: `npm run dev` (port 5178 during development).
 - Browser checks (dev server running): `npm run test:browser` (Level 1 end to
-  end), `npm run test:browser -- signin`, `... level` (LEVEL=2|3), `... death`.
+  end), `npm run test:browser -- signin`, `... level` (LEVEL=2|3), `... death`,
+  `... lights` (the landing's lantern, pumpkins and window act where measured),
+  `... responsive` (text size and fit on five laptop sizes, two phones, a tablet),
+  `... pumpkins` (the landing's jack-o'-lanterns visibly flicker).
 - Asset credits: `npm run audit:credits` (every file in `public/` must have a
   README credit row; exits 1 if not).
 - Production build: `npm run build`.
@@ -60,6 +63,8 @@
   on the AudioContext clock (`HallScene.runEvents`).
 - **Shader cost**: compile variants with `compileAsync` during an intro, upload
   textures one per frame; no frame over 300 ms during play.
+- **UI sizes in rem**: component CSS is in `rem`; `index.html` sets the root size (16 px on phones and
+  below 761 x 561, growing with the screen on laptops, 17-26 px). Keep `@media` conditions and 1-2 px hairlines in px.
 - **Saves**: accounts in `localStorage` (`ghostwriter_users_v1`, session
   `ghostwriter_session_v1`, guest `ghostwriter_guest_v1`), versioned JSON.
 
