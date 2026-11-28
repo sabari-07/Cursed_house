@@ -18,7 +18,10 @@ export const USERS_KEY = 'ghostwriter_users_v1'
 export const SESSION_KEY = 'ghostwriter_session_v1'
 export const LEGACY_PROGRESS_KEY = 'ghostwriter_progress_v1'
 export const SEED_URL = '/data/users.json'
-/** A guest's progress: kept in this browser, never on the leaderboard, carried into an account on sign-up. */
+/**
+ * Where older builds saved a guest's progress. A guest's progress is no longer
+ * saved (it lives in memory for this visit only); the key is only cleared.
+ */
 export const GUEST_KEY = 'ghostwriter_guest_v1'
 export const GUEST_ID = 'guest'
 
@@ -133,7 +136,7 @@ export async function signUp(name: string, password: string): Promise<NewAccount
     if (password.length < MIN_PASSWORD) throw new AccountError('BadPassword', `Passwords need at least ${MIN_PASSWORD} characters.`)
     const guest = isGuest() ? readGuest() : null
     const a = await online(() => apiSignUp(n, password, guest))
-    if (guest) { try { localStorage.removeItem(GUEST_KEY) } catch { /* nothing to do */ } }
+    if (guest) forgetGuest()
     return a
   }
   if (password.length < MIN_PASSWORD) throw new AccountError('BadPassword', `Passwords need at least ${MIN_PASSWORD} characters.`)
@@ -148,7 +151,7 @@ export async function signUp(name: string, password: string): Promise<NewAccount
   const account: Account = { id: crypto.randomUUID(), name: n, salt: b64(salt), hash: b64(hash), createdAt: new Date().toISOString(), progress }
   writeStore({ version: 1, users: [...store.users, account] })
   setSession(account.id)
-  if (guest) { try { localStorage.removeItem(GUEST_KEY) } catch { /* nothing to do */ } }
+  if (guest) forgetGuest()
   return account
 }
 
@@ -210,6 +213,7 @@ function onlineSession(): OnlineSession | null {
 export function signOut(): void {
   const o = onlineSession()
   if (o) void apiSignOut(o.token)
+  forgetGuest()
   try { localStorage.removeItem(SESSION_KEY) } catch { /* nothing to do */ }
 }
 
@@ -239,13 +243,24 @@ export async function refreshAccount(): Promise<Account | null> {
 
 // ── guest play ────────────────────────────────────────────────────────────
 
+/**
+ * A guest's progress lives only in memory: it lasts while the page is open (a
+ * death or a won level returns to the landing without reloading), and a new
+ * guest game or a reload starts again from Level 1, Stage 1.
+ */
+let guestProgress: ProgressV2 | null = null
 function readGuest(): ProgressV2 {
-  try { return parseProgress(JSON.parse(localStorage.getItem(GUEST_KEY) || 'null')) ?? freshProgress() } catch { return freshProgress() }
+  return guestProgress ?? freshProgress()
+}
+function forgetGuest(): void {
+  guestProgress = null
+  try { localStorage.removeItem(GUEST_KEY) } catch { /* nothing to do */ }
 }
 const guestAccount = (): Account => ({ id: GUEST_ID, name: 'Guest', salt: '', hash: '', createdAt: '', progress: readGuest() })
 
-/** Plays without an account: progress stays in this browser and off the leaderboard. */
+/** Plays without an account, from the beginning: nothing is saved and the guest stays off the leaderboard. */
 export function startGuest(): Account {
+  forgetGuest()
   setSession(GUEST_ID)
   return guestAccount()
 }
@@ -267,7 +282,7 @@ export function saveProgress(progress: ProgressV2): Account | null {
   const me = current()
   if (!me) return null
   if (me.id === GUEST_ID) {
-    try { localStorage.setItem(GUEST_KEY, JSON.stringify(progress)) } catch { /* plays on, unsaved */ }
+    guestProgress = progress
     return { ...me, progress }
   }
   const o = onlineSession()

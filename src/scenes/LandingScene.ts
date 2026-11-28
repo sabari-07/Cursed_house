@@ -61,6 +61,23 @@ const ARJUN_HEIGHT = 152
 const BLINK_WINDOW = { x0: 676, y0: 252, x1: 701, y1: 285 }
 const MOON = { x: 603, y: 160, r: 136 }
 /**
+ * The black cat on the post at the left: its two glowing eyes, centre and half-size (painting
+ * px, measured from the lit pixels of the prepared painting: left eye x 206-216, right eye
+ * x 224-232, both y 563-569). Every CAT_BLINK.every seconds the lids drop over both eyes and
+ * lift again (catBlink); the lids take the colour of the fur just round each eye.
+ */
+const CAT_EYES = { l: [211, 566.5], r: [228, 567], rx: 6, ry: 4 }
+const CAT_BLINK = { every: 3, close: 0.08, hold: 0.06, open: 0.13 }
+/** How shut the cat's eyes are t seconds into the scene (0 open, 1 shut): a quick blink every 3 s. */
+export function catBlink(t: number): number {
+  const s = t % CAT_BLINK.every - (CAT_BLINK.every - CAT_BLINK.close - CAT_BLINK.hold - CAT_BLINK.open)
+  if (s < 0) return 0
+  const ease = (v: number) => v * v * (3 - 2 * v)
+  if (s < CAT_BLINK.close) return ease(s / CAT_BLINK.close)
+  if (s < CAT_BLINK.close + CAT_BLINK.hold) return 1
+  return 1 - ease(Math.min(1, (s - CAT_BLINK.close - CAT_BLINK.hold) / CAT_BLINK.open))
+}
+/**
  * Lantern hanging in the left tree: centre and half-size of its glass (x 67-119, y 203-253,
  * measured); the glow it throws on the branches reaches about 1.6 times that.
  */
@@ -223,6 +240,9 @@ export class LandingScene {
     /** A figure standing in that window (0..1). */
     uWinSil: { value: 0 },
     uMoon: { value: new THREE.Vector3(MOON.x, MOON.y, MOON.r) },
+    uCatEyes: { value: new THREE.Vector4(CAT_EYES.l[0], CAT_EYES.l[1], CAT_EYES.r[0], CAT_EYES.r[1]) },
+    /** The cat's lids: 0 open, 1 shut. */
+    uCatBlink: { value: 0 },
     uLamp: { value: new THREE.Vector4(TREE_LANTERN.x, TREE_LANTERN.y, TREE_LANTERN.rx, TREE_LANTERN.ry) },
     uLampOn: { value: 1 },
     uPump: { value: PUMPKINS.map(p => new THREE.Vector4(p.x, p.y, p.rx, p.ry)) },
@@ -735,6 +755,8 @@ export class LandingScene {
         uniform vec2 uScreen, uOffset, uImg;
         uniform vec4 uWin;
         uniform vec3 uMoon;
+        uniform vec4 uCatEyes;
+        uniform float uCatBlink;
         varying vec2 vUv;
         uniform vec4 uLamp;
         uniform float uLampOn;
@@ -814,6 +836,28 @@ export class LandingScene {
           vec2 warp = vec2(fbm(px / 129.0 + vec2(uTime * 0.06, 0.0)) - 0.5,
                            fbm(px / 129.0 + vec2(3.0, uTime * 0.04)) - 0.5) * 12.9;
           vec3 col = sampleAt(px + warp * sky0);
+          // 1b) the cat blinks: furred lids drop over both glowing eyes from the top,
+          //     and the glow the eyes threw on the fur round them fades with them
+          if (uCatBlink > 0.0) {
+            for (int k = 0; k < 2; k++) {
+              vec2 c = k == 0 ? uCatEyes.xy : uCatEyes.zw, d = px - c;
+              if (abs(d.x) > 16.0 || abs(d.y) > 12.0) continue;
+              vec2 e = d / vec2(${CAT_EYES.rx.toFixed(1)}, ${CAT_EYES.ry.toFixed(1)});
+              float r = length(e);
+              // the fur: the painting just above the eye and between the eyes (below is the lit
+              // muzzle; outside the right eye the pale sky shows past the cheek)
+              float inward = k == 0 ? 1.0 : -1.0;
+              vec3 fur = (sampleFast(c + vec2(0.0, -8.0)) + sampleFast(c + vec2(inward * 3.0, -8.0))
+                        + sampleFast(c + vec2(inward * 8.5, -1.0))) / 3.0;
+              fur = min(fur, vec3(0.03));
+              float inEye = 1.0 - smoothstep(0.95, 1.35, r);
+              float lidY = -1.3 + 2.6 * uCatBlink;              // the lid's edge, eye units (y down)
+              float lid = 1.0 - smoothstep(lidY - 0.25, lidY + 0.15, e.y);
+              col = mix(col, fur, inEye * lid);
+              float halo = (1.0 - smoothstep(1.3, 2.6, r)) * (1.0 - inEye) * smoothstep(0.01, 0.08, col.r - col.b);
+              col = mix(col, fur, halo * uCatBlink);
+            }
+          }
           float sky = skyness(col, px);
           float warm = warmth(col);
 
@@ -1290,6 +1334,7 @@ export class LandingScene {
     this.updateRain(delta)
     this.updateWindow(delta)
     const u = this.uniforms
+    u.uCatBlink.value = catBlink(t)
     u.uLampOn.value = this.updateBlinker(this.lampBlink, LANTERN_BLINK, delta, 4, 4, u.uLampOn.value)
     this.updatePumpkins(t, delta)
     this.updateLightning(delta)

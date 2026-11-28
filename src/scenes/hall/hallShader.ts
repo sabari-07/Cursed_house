@@ -596,8 +596,13 @@ export const HALL_SHADER = /* glsl */ `
        + texture2D(uFig, suv + vec2(0.0, texel.y)).a + texture2D(uFig, suv - vec2(0.0, texel.y)).a) * 0.16;
     if (fa > 0.001) {
       vec3 fc = pow(max(fig.rgb / max(fig.a, 0.001), 0.0), vec3(1.0 / 2.2));
-      fc *= 0.82 + 0.28 * fbm(sp / vec2(2.5, 9.0)) + 0.12 * (noise(sp / vec2(40.0, 160.0)) - 0.5);
-      fc = fc * vec3(0.78, 1.02, 0.98) + vec3(0.006, 0.022, 0.024);
+      // only broad, slow variation (fine screen-space grain made the cloth read as flocked felt)
+      fc *= 0.94 + 0.12 * (noise(sp / vec2(60.0, 180.0)) - 0.5);
+      // graded into the painting: the same cold cast, blacks lifted to the room's haze,
+      // and the darker parts a little desaturated like the painted shadows
+      float fl = dot(fc, vec3(0.299, 0.587, 0.114));
+      fc = mix(vec3(fl), fc, 0.65 + 0.35 * smoothstep(0.05, 0.35, fl));
+      fc = fc * vec3(0.78, 1.0, 0.97) + vec3(0.006, 0.022, 0.024);
       float edge = clamp(fa * (1.0 - fa) * 4.0, 0.0, 1.0);
       fc += base * vec3(0.5, 0.9, 0.85) * edge * 0.35;
       col = mix(col, fc, fa);

@@ -57,11 +57,33 @@ const CLIPS = {
   whispers: '/audio/library-whispers.mp3',
   bookFall: '/audio/book-fall.wav',
   snuff: '/audio/candle-snuff.wav',
+  /** One typewriter strike (the title card's key): played once for each click on something in the room. */
+  key: '/audio/type-key-a.wav',
   }
 type ClipName = keyof typeof CLIPS
 /** Clips only the hall plays, and clips only the painted rooms play (each loads just its own). */
 const HALL_ONLY: ClipName[] = ['voice'] // the death needs thunder and the slam everywhere
 const ROOM_ONLY: ClipName[] = ['bell', 'whispers', 'bookFall', 'snuff']
+/**
+ * The music under play (33 s, looped; credited in README). The recording is loud (about
+ * -18 dBFS RMS, hits at 0 dBFS), so it is evened out by a compressor, softened by a
+ * lowpass and played at a low gain. While a clue plays it dips to `duck`; it is cut
+ * before the death's laugh. Fades in seconds.
+ */
+export const MUSIC = {
+  url: '/audio/music-horror-trailer.mp3',
+  gain: 0.18, lowpass: 2400, compThreshold: -26, compRatio: 4,
+  fadeIn: 2.5, fadeOut: 1.2,
+  duck: 0.25, duckPre: 0.3, duckPost: 0.6,
+}
+/** The player's music switch, kept in this browser (on unless they turned it off). */
+export const MUSIC_KEY = 'ghostwriter_music_v1'
+export function musicPreferred(): boolean {
+  try { return (JSON.parse(localStorage.getItem(MUSIC_KEY) || 'null') as { on?: boolean } | null)?.on !== false } catch { return true }
+}
+export function setMusicPreferred(on: boolean): void {
+  try { localStorage.setItem(MUSIC_KEY, JSON.stringify({ version: 1, on })) } catch { /* kept for this visit only */ }
+}
 /** The whispers recording is played from 0 for this long only: it grows loud and wordy after 6 s. */
 const WHISPER_KEEP = 6
 
@@ -685,6 +707,13 @@ export class HallScene {
       else if (e.kind === 'whisper') src = this.play('whispers', at, 0.8, 0, true, undefined, WHISPER_KEEP)
  if (src) this.eventSources.push(src)
     }
+    // the music dips under every sound a clue makes, and under every shown-only clue for a moment
+    const t0 = ctx!.currentTime + 0.05
+    this.duckMusic(events.map(e => {
+      const clip = e.kind === 'ring' || e.kind === 'echo' ? 'bell' : e.kind === 'snuff' ? 'snuff' : e.kind === 'fall' ? 'bookFall' : e.kind === 'whisper' ? 'whispers' : null
+      const len = clip ? Math.min(clip === 'whispers' ? WHISPER_KEEP : 99, this.clips[clip]?.duration ?? 1.5) : 1.2
+      return [t0 + e.at, t0 + e.at + len]
+    }))
   }
 
   /** Stops a room's pending events (the stage ended, or Arjun died). */
@@ -694,6 +723,8 @@ export class HallScene {
     this.eventSources = []
     this.roomEvents = []
     this.onCue = null
+    this.duckSpans = []
+    this.applyDucks()
   }
 
   /** Per frame: fire due events, animate overlay strengths, drifting letters and the bell's swing. */
@@ -869,6 +900,8 @@ export class HallScene {
     if (this.mode !== 'play') return
     this.lightDip = Math.max(this.lightDip, 0.35)
     this.play('heartbeat', 0, 0.9)
+    const now = this.ctx?.currentTime ?? 0
+    this.duckMusic([[now, now + (this.clips.heartbeat?.duration ?? 1)]])
   }
 
   /** A right answer: every light in the room blinks three times (no portrait falls). */
@@ -906,6 +939,8 @@ export class HallScene {
     const running = !!ctx && ctx.state === 'running' && !!this.master
     const b = running ? ctx!.currentTime + 0.06 : undefined
     this.deathBase = b ?? null
+    // the music is silent before her laugh begins, and stays off for the whole death
+    this.cutMusic(b)
     this.deathPerf = performance.now() / 1000
     this.play('laugh', 0, 1.2, 0, true, b)
     this.play('heartbeat', 0.15, 1.0, 0, false, b)
@@ -938,6 +973,103 @@ export class HallScene {
     if (this.master) this.master.gain.value = muted ? 0 : 1
   }
 
+  // ── the music under play ─────────────────────────────────────────────────
+  // source (looped) → lowpass → compressor → level (on/off, fades) → duck (clues, death) → master.
+  // Only the level gain answers the player's music switch; the master (global mute) and every
+  // other sound are untouched. It is loaded after the intro's clips, so it never delays them.
+  private music: { src: AudioBufferSourceNode; level: GainNode; duck: GainNode } | null = null
+  private musicBuf: AudioBuffer | null = null
+  private musicWanted = false
+  private loadMusic(ctx: AudioContext): void {
+    void fetch(MUSIC.url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b)).then(buf => {
+      if (this.disposed) return
+      this.musicBuf = buf
+      if (this.musicWanted) this.setMusic(true)
+    }).catch(() => undefined)
+  }
+  /**
+   * The music plays while the stage clock runs and the player has it on. It fades in over
+   * MUSIC.fadeIn and out over MUSIC.fadeOut, on the audio clock.
+   */
+  setMusic(on: boolean): void {
+    this.musicWanted = on
+    const ctx = this.ctx
+    if (!ctx || !this.master || this.mode === 'dying') return
+    if (on && !this.music && this.musicBuf) {
+      const src = ctx.createBufferSource()
+      src.buffer = this.musicBuf
+      src.loop = true
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = MUSIC.lowpass
+      const comp = ctx.createDynamicsCompressor()
+      comp.threshold.value = MUSIC.compThreshold; comp.ratio.value = MUSIC.compRatio; comp.knee.value = 10
+      comp.attack.value = 0.01; comp.release.value = 0.4
+      const level = ctx.createGain(); level.gain.value = 0
+      const duck = ctx.createGain(); duck.gain.value = 1
+      src.connect(lp).connect(comp).connect(level).connect(duck).connect(this.master)
+      src.start()
+      this.music = { src, level, duck }
+      this.applyDucks()
+    }
+    if (!this.music) return
+    const g = this.music.level.gain, now = ctx.currentTime
+    g.cancelScheduledValues(now)
+    g.setValueAtTime(g.value, now)
+    g.linearRampToValueAtTime(on ? MUSIC.gain : 0, now + (on ? MUSIC.fadeIn : MUSIC.fadeOut))
+  }
+  /** Spans (audio clock, s) when a clue is sounding: the music dips under each one. */
+  private duckSpans: [number, number][] = []
+  private duckMusic(spans: [number, number][]): void {
+    this.duckSpans.push(...spans)
+    this.applyDucks()
+  }
+  /** (Re)schedules every dip still to come; called when a clue is added and when the music starts. */
+  private applyDucks(): void {
+    const ctx = this.ctx
+    if (!ctx || !this.music) return
+    const now = ctx.currentTime, g = this.music.duck.gain
+    this.duckSpans = this.duckSpans.filter(([, b]) => b + MUSIC.duckPost > now)
+    // overlapping clues make one long dip
+    const merged: [number, number][] = []
+    for (const [a, b] of [...this.duckSpans].sort((x, y) => x[0] - y[0])) {
+      const last = merged[merged.length - 1]
+      if (last && a - MUSIC.duckPre <= last[1] + MUSIC.duckPost) last[1] = Math.max(last[1], b)
+      else merged.push([a, b])
+    }
+    g.cancelScheduledValues(now)
+    g.setValueAtTime(g.value, now)
+    // out of any dip (or a dip was cancelled half way): back up to full before the next one
+    if (!merged.length || merged[0][0] - MUSIC.duckPre > now + 0.3) g.linearRampToValueAtTime(1, now + 0.3)
+    for (const [a, b] of merged) {
+      const down = Math.max(now, a - MUSIC.duckPre)
+      g.setValueAtTime(down === now ? g.value : 1, down)
+      g.linearRampToValueAtTime(MUSIC.duck, down + 0.15)
+      g.setValueAtTime(MUSIC.duck, Math.max(b, down + 0.15))
+      g.linearRampToValueAtTime(1, Math.max(b, down + 0.15) + MUSIC.duckPost)
+    }
+  }
+  /** Death or a dispose: the music is gone before the laugh starts. */
+  private cutMusic(at?: number): void {
+    const ctx = this.ctx, m = this.music
+    if (!ctx || !m) return
+    // silent by `at` (the laugh's start): a short ramp from now, so it neither clicks nor overlaps
+    const end = Math.max(ctx.currentTime + 0.03, at ?? ctx.currentTime + 0.06)
+    m.duck.gain.cancelScheduledValues(ctx.currentTime)
+    m.duck.gain.setValueAtTime(m.duck.gain.value, ctx.currentTime)
+    m.duck.gain.linearRampToValueAtTime(0, end)
+    try { m.src.stop(end + 0.05) } catch { /* already stopped */ }
+    this.music = null
+  }
+
+  private keyStrikes = 0
+  /**
+   * One click on something in the room (a portrait, a paper, an answer button): one key
+   * strike, as on the title card: slow and heavy (pitched down, no two quite the same),
+   * dull, with the room's stone reflection. Its attack is kept (no fade-in).
+   */
+  keyStrike(): void {
+    this.play('key', 0, 0.75, 2600, true, undefined, undefined, 0.6 + 0.02 * (this.keyStrikes++ % 5))
+  }
+
   /**
    * Honour `prefers-reduced-motion`. When on, the scene drops every large,
    * physical motion: the door-slam and witch-impact screen shake, the camera
@@ -968,7 +1100,9 @@ export class HallScene {
     fill.position.set(0.2, -0.2, 1)
     // cold moonlight from the tall windows on the left rakes across his back,
     // so the folds of the coat catch light and shadow
-    const rake = new THREE.DirectionalLight(0x6fb8b0, 0.85)
+    // (kept low: lit evenly from our side he reads as a doll; a dark back with
+    // bright rims from the windows and the lamp reads as a man in the room)
+    const rake = new THREE.DirectionalLight(0x6fb8b0, 0.5)
     rake.position.set(-1, 0.55, 0.45)
     this.figScene.add(rake)
     this.figScene.add(this.moonRim, this.lampRim, this.ambient, fill)
@@ -1057,6 +1191,7 @@ export class HallScene {
       const buffers = await Promise.all(names.map(n => load(CLIPS[n]).catch(() => null)))
       names.forEach((n, i) => { if (buffers[i]) this.clips[n] = buffers[i]! })
       if (this.disposed) return
+      this.loadMusic(ctx)                         // not awaited: the intro never waits for it
       if (this.clips.laugh) this.laughEnv = envelope(this.clips.laugh)
       if (this.startAt !== null || this.mode !== 'intro' || ctx.state !== 'running') return
       window.clearTimeout(fallback)
@@ -1086,13 +1221,14 @@ export class HallScene {
   }
 
   /** Plays a clip `delay` s from now (or at absolute audio time base + delay). */
-  private play(name: ClipName, delay: number, gain: number, lowpass = 0, room = false, base?: number, duration?: number): AudioBufferSourceNode | null {
+  private play(name: ClipName, delay: number, gain: number, lowpass = 0, room = false, base?: number, duration?: number, rate = 1): AudioBufferSourceNode | null {
     const ctx = this.ctx
     const buffer = this.clips[name]
     if (!ctx || !this.master || !buffer) return null
     const when = (base ?? ctx.currentTime) + delay
     const src = ctx.createBufferSource()
     src.buffer = buffer
+    src.playbackRate.value = rate
     const g = ctx.createGain()
     g.gain.value = gain
     if (duration) {
@@ -1660,9 +1796,9 @@ export class HallScene {
       if (a.lantern) a.lantern.rotation.x = 0.5 * fear
     }
     // The warm lamp is far away up on the balcony: only a faint warm edge.
-    this.moonRim.intensity = 3.0 * (0.55 + 0.45 * light) + flash * 8
-    this.lampRim.intensity = 0.55 * light
-    this.ambient.intensity = 0.34 * (0.5 + 0.5 * light) + flash * 1.2
+    this.moonRim.intensity = 3.6 * (0.55 + 0.45 * light) + flash * 8
+    this.lampRim.intensity = 0.8 * light
+    this.ambient.intensity = 0.26 * (0.5 + 0.5 * light) + flash * 1.2
     const flame = 0.95 + 0.03 * Math.sin(t * 5.1) + 0.02 * Math.sin(t * 11.7)
     a.lanternLight.intensity = 4 * flame * (0.6 + 0.4 * light)
     if (a.lanternGlass) (a.lanternGlass.material as THREE.MeshBasicMaterial).color.setRGB(1, 0.72 * flame + 0.1, 0.38 * flame)
@@ -1678,6 +1814,7 @@ export class HallScene {
   dispose(): void {
     this.disposed = true
     cancelAnimationFrame(this.frameId)
+    this.cutMusic()
     releaseAudio(this.ctx, this.master ? [this.master] : [])
     this.scene.traverse(o => {
       const m = o as THREE.Mesh

@@ -59,9 +59,12 @@ function sleeveGeo(len: number, r0: number, r1: number, elbowBunch: number): THR
     // horizontal creases where the cloth bunches, a few vertical drape folds
     const bunch = Math.sin(t * 26 + Math.sin(a * 2) * 1.5) * 0.06 * elbowBunch * Math.exp(-((t - 0.1) ** 2) * 18)
     const drape = Math.sin(a * 5 + t * 3) * 0.035 + Math.sin(a * 9 + 1.7) * 0.015
-    const k = 1 + bunch + drape
+    // the top of the upper sleeve rounds into the shoulder (a flat-topped tube reads as a doll's arm)
+    const cap = elbowBunch >= 1 ? THREE.MathUtils.smoothstep(t, 0.78, 1) : 0
+    const k = (1 + bunch + drape) * (1 - 0.45 * cap * cap)
     p.setX(i, x * k)
     p.setZ(i, z * k)
+    if (cap > 0) p.setY(i, y - 0.012 * cap * cap)
   }
   g.computeVertexNormals()
   return g
@@ -158,6 +161,12 @@ export class ArjunModel {
       // shoulder blades push the back out a little; the small of the back curves in
       const back = Math.max(0, -Math.cos(a))
       k += back * (0.05 * Math.exp(-((v - 0.82) ** 2) * 220) - 0.035 * Math.exp(-((v - 0.62) ** 2) * 150))
+      // the shoulders: the cloth runs out sideways over the tops of the sleeves
+      // (only across his width, so he stays slim seen from the side)
+      const sideK = Math.sin(a) ** 2
+      x += Math.sign(x) * 0.026 * sideK * Math.exp(-((y - 0.676) ** 2) * 700)
+      // the centre-back seam: a shallow groove from the collar down to the vent
+      k -= 0.012 * Math.exp(-((u - 0.5) ** 2) * 4000) * THREE.MathUtils.smoothstep(v, 0.5, 0.56)
       // the back vent: the two flaps part slightly below the hips
       const ventSide = Math.sin(a)                                   // + = his left
       const vent = THREE.MathUtils.smoothstep(0.42 - v, 0, 0.2) * Math.exp(-((u - 0.5) ** 2) * 900)
@@ -180,11 +189,19 @@ export class ArjunModel {
     this.coatGeo = coatGeo
     this.coatRest = new Float32Array(cp.array as Float32Array)
 
-    // Shoulders: padded, squared caps that the sleeves hang from
-    // (sunk into the coat so only a soft rise shows, not a ball)
-    for (const side of [-1, 1]) {
-      const shoulder = add(new THREE.Mesh(new THREE.SphereGeometry(0.046, 28, 20), coatPlain), side * 0.1, 0.682)
-      shoulder.scale.set(1.0, 0.5, 0.75)
+    // Shoulders: the coat itself is shaped out over the sleeve tops (above), so
+    // there are no separate caps (they read as a doll's ball joints).
+    // A greatcoat's half-belt across the small of the back, buttoned at each end
+    {
+      const belt = add(new THREE.Mesh(new THREE.CylinderGeometry(0.112, 0.112, 0.022, 24, 1, true, Math.PI - 0.5, 1.0),
+        new THREE.MeshStandardMaterial({ color: 0xd8d8dc, map: wool.map, normalMap: wool.normalMap, roughness: 1, side: THREE.DoubleSide })), 0, 0.5)
+      belt.scale.z = 0.66
+      const horn = new THREE.MeshStandardMaterial({ color: 0x15110e, roughness: 0.5 })
+      for (const a of [Math.PI - 0.42, Math.PI + 0.42]) {
+        const b = add(new THREE.Mesh(new THREE.SphereGeometry(0.0065, 10, 8), horn), Math.sin(a) * 0.114, 0.5, Math.cos(a) * 0.114 * 0.66)
+        b.scale.z = 0.5
+        b.lookAt(b.position.x * 2, 0.5, b.position.z * 2)
+      }
     }
 
     // Arms: shoulder and elbow pivots so they swing against the legs.
@@ -197,8 +214,8 @@ export class ArjunModel {
     }
     for (const side of [-1, 1]) {
       const shoulder = new THREE.Group()
-      shoulder.position.set(side * 0.123, 0.67, 0)
-      shoulder.rotation.z = -side * 0.045     // arms hang close to the coat
+      shoulder.position.set(side * 0.12, 0.672, 0)
+      shoulder.rotation.z = -side * 0.035     // arms hang close to the coat
       const upper = capsule(0.13)
       upper.position.set(side * (side < 0 ? 0.011 : 0.007), -0.07, side < 0 ? 0.01 : 0)
       upper.rotation.z = side < 0 ? -0.14 : 0.1
@@ -241,19 +258,23 @@ export class ArjunModel {
     const collarMat = new THREE.MeshStandardMaterial({
       color: 0x8a8a90, map: sleeveWool.map, normalMap: sleeveWool.normalMap, roughness: 1, side: THREE.DoubleSide,
     })
-    // tall enough at the back to hide the neck up to the hairline
-    const cg = new THREE.CylinderGeometry(0.06, 0.058, 0.07, 40, 4, true, Math.PI * 0.3, Math.PI * 1.4)
+    // Up to the nape only, so the back of his head and hair show above it
+    // (a taller collar hid the head and read as a tube with a hat on top).
+    const CH = 0.046
+    const cg = new THREE.CylinderGeometry(0.058, 0.064, CH, 40, 4, true, Math.PI * 0.3, Math.PI * 1.4)
     const cgp = cg.getAttribute('position') as THREE.BufferAttribute
     for (let i = 0; i < cgp.count; i++) {
-      // the top edge rolls outward, like a heavy collar
-      const t = cgp.getY(i) / 0.07 + 0.5
-      const k = 1 + 0.18 * t * t
+      // the top edge rolls outward, like a heavy collar, and dips a little at the back
+      const t = cgp.getY(i) / CH + 0.5
+      const k = 1 + 0.22 * t * t
+      const back = Math.max(0, -cgp.getZ(i) / 0.06)
       cgp.setX(i, cgp.getX(i) * k)
       cgp.setZ(i, cgp.getZ(i) * k)
+      cgp.setY(i, cgp.getY(i) - 0.004 * t * back)
     }
     cg.computeVertexNormals()
-    const collar = add(new THREE.Mesh(cg, collarMat), 0, 0.8, -0.008)
-    collar.rotation.x = -0.18
+    const collar = add(new THREE.Mesh(cg, collarMat), 0, 0.787, -0.006)
+    collar.rotation.x = -0.12
 
     const head = add(this.buildHead(), 0, 0.845)
     head.scale.set(0.86, 1.08, 0.95)
@@ -286,7 +307,8 @@ export class ArjunModel {
       }
       const hairTex = new THREE.CanvasTexture(hairC)
       hairTex.colorSpace = THREE.SRGBColorSpace
-      const hairMat = new THREE.MeshStandardMaterial({ map: hairTex, color: 0x3a3634, roughness: 0.9, metalness: 0, side: THREE.DoubleSide })
+      // now that the lower collar shows it: dark, matte, so it reads as hair and not a cap
+      const hairMat = new THREE.MeshStandardMaterial({ map: hairTex, color: 0x2a2624, roughness: 0.95, metalness: 0, side: THREE.DoubleSide })
       const hair = add(new THREE.Mesh(hg, hairMat), 0, 0.848, -0.002)
       hair.scale.set(0.88, 1.1, 0.98)
     }

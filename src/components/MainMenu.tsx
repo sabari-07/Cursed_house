@@ -95,7 +95,7 @@ export function MainMenu({ onExit }: Props) {
             {account && progress ? (
               <>
                 <div className="player-name">{guest ? 'Playing as a guest' : account.name}</div>
-                {guest && <div className="player-guest">Your progress is kept in this browser, but not on the leaderboard.</div>}
+                {guest && <div className="player-guest">A guest game is not saved: reload the page and you start again from the beginning.</div>}
                 <div className="player-where">
                   {progress.level === 4 ? 'All levels cleared' : `Level ${progress.level} · Stage ${progress.stage} · ${level!.name}`}
                 </div>

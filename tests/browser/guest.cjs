@@ -1,6 +1,7 @@
 // Guest play through the real UI: PLAY AS GUEST, win Level 1 Stage 1, check
-// the progress is kept but the guest is not on the leaderboard, then SAVE MY
-// PROGRESS turns it into an account that carries the progress.
+// nothing is saved (a reload starts again at Level 1, Stage 1) and the guest
+// is not on the leaderboard, then SAVE MY PROGRESS turns it into an account.
+// (Carrying won treasures into the account is covered by accounts.test.ts.)
 const { launch, enter, answer, check, BASE, T } = require('./lib.cjs')
 ;(async () => {
   const { browser, page, errs } = await launch()
@@ -24,13 +25,14 @@ const { launch, enter, answer, check, BASE, T } = require('./lib.cjs')
   await page.waitForSelector('.question-bar', { timeout: 60000 })
   const r = await answer(page)
   await page.waitForFunction(id => window.__run.id !== id, r.id, { timeout: 30000 })
-  const g = await page.evaluate(() => JSON.parse(localStorage.getItem('ghostwriter_guest_v1')))
-  check(g && g.stage === 2, `a guest's win is kept (stage ${g && g.stage})`)
+  check((await page.evaluate(() => localStorage.getItem('ghostwriter_guest_v1'))) === null, "a guest's stage is not saved")
   check((await page.evaluate(() => localStorage.getItem('ghostwriter_users_v1'))) === null, 'no account was stored for the guest')
 
   // back on the landing: the leaderboard does not list the guest
   await page.reload({ waitUntil: 'load' })
   await page.waitForSelector('.player-guest', { timeout: 60000 })
+  const where = await page.textContent('.player-where')
+  check(/Level 1 \W+ Stage 1 /.test(where), `after a reload the guest starts from the beginning (${where})`)
   await page.click('.player-actions button:has-text("LEADERBOARD")')
   await page.waitForSelector('.lb table')
   const rows = await page.$$eval('.lb tbody tr', rs => rs.map(x => x.textContent))
@@ -47,7 +49,7 @@ const { launch, enter, answer, check, BASE, T } = require('./lib.cjs')
   await page.click('.acct-go')
   await page.waitForFunction(() => document.querySelector('.player-name')?.textContent === 'Wanderer')
   const a = await page.evaluate(() => JSON.parse(localStorage.getItem('ghostwriter_users_v1')).users[0].progress)
-  check(a.stage === 2, `the new account carries the guest's progress (stage ${a.stage})`)
+  check(a.level === 1 && a.stage === 1, `the new account starts from the guest's game (level ${a.level}, stage ${a.stage})`)
   check((await page.evaluate(() => localStorage.getItem('ghostwriter_guest_v1'))) === null, 'the guest save is cleared')
   check(errs.length === 0, errs.join('\n') || 'no page errors')
   await browser.close()

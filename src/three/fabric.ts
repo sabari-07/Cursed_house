@@ -85,9 +85,10 @@ export function woolCoat(): ClothMaps {
     const a = latticeNoise(3, 16), b = latticeNoise(7, 64), c = latticeNoise(13, 8)
     return bake(N,
       (x, y) => a(x / 16, y / 16) * 0.55 + b(x / 4, y / 4) * 0.3 + ((x + y) % 2) * 0.06,
-      (h, x, y) => { const k = 0.7 + 0.45 * h + 0.25 * (c(x / 32, y / 32) - 0.5); return [30 * k, 30 * k, 38 * k] },
+      (h, x, y) => { const k = 0.82 + 0.22 * h + 0.18 * (c(x / 32, y / 32) - 0.5); return [30 * k, 30 * k, 38 * k] },
       h => 0.8 + 0.15 * h,
-      4, 8)
+      // a soft nap, not a glittering bump: heavy wool barely catches the light
+      1.6, 8)
   })
 }
 

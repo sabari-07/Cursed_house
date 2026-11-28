@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { HallScene, type HallTarget } from '../scenes/HallScene'
+import { HallScene, musicPreferred, setMusicPreferred, type HallTarget } from '../scenes/HallScene'
 import { JOURNAL, PORTRAITS, type PortraitId } from '../stage1/stage1Data'
 import { JOURNAL_TEXT, PORTRAIT_NAMES, RIDDLE_IDS, checkAnswer, generateRiddle, newSeed, type RiddleId, type RiddleRun } from '../stage1/riddles'
 import { LEVELS, STAGE_TITLES, TREASURES, playable, type StageNo, type TreasureId } from '../game/levels'
 import { afterDeath, afterWin, type ProgressV2 } from '../game/progress'
+import { deathCount, deathLine, deathTip, guideDue, guideLines, markGuideSeen, type DeathCause } from '../game/houseVoice'
 import { checkRoomAnswer, generateRoomRiddle, isRoomRiddle, type RoomRun } from '../riddles'
 import { ROOMS } from '../scenes/room/rooms'
 import { SequencePanel } from './answers/SequencePanel'
@@ -182,6 +183,8 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
   // The candle the player can carry round the room (every stage): toggled by
   // the helper at the top left or C; its light follows the pointer.
   const [torch, setTorch] = useState(false)
+  /** The music under play: the player's switch (only the music; every other sound is untouched). */
+  const [musicOn, setMusicOn] = useState(musicPreferred)
   /** Phones: the question bar folds to one line so the room can be seen. */
   const [qFolded, setQFolded] = useState(false)
   const torchRef = useRef<HTMLDivElement | null>(null)
@@ -193,6 +196,22 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
     torchRef.current = el
     if (el) el.style.transform = `translate(${lastPos.current.x + 16}px, ${lastPos.current.y + 22}px)`
   }
+
+  // Grandfather's ghost greets a first-time player once (houseVoice.ts):
+  // first a whisper by the candle, then one by the ANSWER button.
+  const [guide, setGuide] = useState<'candle' | 'answer' | null>(() => (guideDue() ? 'candle' : null))
+  const guideRef = useRef(guide)
+  guideRef.current = guide
+  const guideText = guideLines(TOUCH)
+  const finishGuide = useCallback(() => {
+    if (guideRef.current === null) return
+    markGuideSeen()
+    setGuide(null)
+  }, [])
+  // picking up the candle is the answer to the first whisper
+  useEffect(() => { if (torch && guide === 'candle') setGuide('answer') }, [torch, guide])
+  /** What the house says over GAME OVER: the line, a remark on the count, and a tip. */
+  const [deathNote, setDeathNote] = useState<{ line: string; count: string | null; tip: string } | null>(null)
 
 
   // Subtitles for everything the room says aloud (shown at the same moment as the sound).
@@ -344,13 +363,14 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
     }
   }, [showQuestion])
 
-  const die = useCallback((why: string) => {
+  const die = useCallback((cause: DeathCause) => {
     if (phaseRef.current !== 'play' && phaseRef.current !== 'memorise') return
     // counted; the next attempt resumes this stage with a new question
     progRef.current = afterDeath(progRef.current)
     saveRef.current(progRef.current)
     setPhase('dead')
-    setMessage(why)
+    const deaths = progRef.current.deaths
+    setDeathNote({ line: deathLine(cause, deaths), count: deathCount(deaths), tip: deathTip(cause) })
     setInspecting(null)
     setJournalOpen(false)
     setClockOpen(false)
@@ -378,7 +398,7 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
     return () => window.clearInterval(id)
   }, [phase])
   useEffect(() => {
-    if (phase === 'play' && timeLeft <= 0) die('The last candle drowns in its own wax.')
+    if (phase === 'play' && timeLeft <= 0) die('time')
   }, [timeLeft, phase, die])
   // No separate time limit for the answer: the stage's own timer keeps running.
   // The last 30 seconds: a heartbeat every 3 seconds.
@@ -388,6 +408,12 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
   useEffect(() => {
     sceneRef.current?.setWax(timeLeft / rules.timeLimit)
   }, [timeLeft])
+  // The music plays while the stage's clock runs (and the player has it on); it fades out
+  // at a win, and the death cuts it before the witch's laugh (HallScene.fail).
+  useEffect(() => {
+    sceneRef.current?.setMusic(phase === 'play' && musicOn)
+  }, [phase, musicOn])
+  const toggleMusic = () => setMusicOn(on => { setMusicPreferred(!on); return !on })
 
   // Messages fade on their own.
   useEffect(() => {
@@ -475,7 +501,9 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
     setConfirming(false)
     setAnswerLeft(rules.answerWindow)
     setAnswerOpen(true)
-  }, [run.kind, answerOpen, wordLen])
+    // the player found the ANSWER button: Grandfather's guide is done
+    finishGuide()
+  }, [run.kind, answerOpen, wordLen, finishGuide])
 
   const openTarget = useCallback((t: HallTarget) => {
     setHover(null)
@@ -524,6 +552,18 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
     const t = examinable(sceneRef.current?.pick(e.clientX, e.clientY))
     if (t) openTarget(t)
   }
+  /**
+   * One click on something that does something, one typewriter key strike (HallScene.keyStrike). Heard in the capture phase,
+   * before any panel stops the click, so every button counts once (a disabled button gets no
+   * click at all); a click on the room counts only when it lands on something to examine.
+   */
+  const onClickSound = (e: React.MouseEvent) => {
+    const el = e.target as Element
+    const scene = sceneRef.current
+    if (!scene) return
+    if (el.closest('button, [role="button"], .wheels span')) { scene.keyStrike(); return }
+    if (el === canvasRef.current && phase === 'play' && !panelOpen && examinable(scene.pick(e.clientX, e.clientY))) scene.keyStrike()
+  }
 
   // ── the one-chance answer ────────────────────────────────────────────────
   const canSubmit = run.kind === 'number' ? given.length > 0
@@ -552,7 +592,7 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
       sceneRef.current?.solve()
       stageWon()
     } else {
-      die('Wrong. The house laughs, and something comes down the stairs.')
+      die('wrong')
     }
   }, [run, given, die, stageWon])
 
@@ -678,12 +718,13 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
       className={`hall-stage ${hover ? 'has-hover' : ''} ${torch && phase === 'play' ? 'is-torch' : ''} ${panelOpen ? 'has-panel' : ''}`}
       onPointerMove={onMove}
       onPointerDown={onMove}
+      onClickCapture={onClickSound}
       onClick={onClick}
     >
       <canvas ref={canvasRef} className="hall-stage-canvas" />
 
       {(phase === 'play' || phase === 'memorise') && (
-        <button type="button" className={`candle-tool ${torch ? 'is-on' : ''}`} aria-pressed={torch}
+        <button type="button" className={`candle-tool ${torch ? 'is-on' : ''} ${guide === 'candle' && phase === 'play' ? 'is-beckoned' : ''}`} aria-pressed={torch}
           onPointerDown={e => {
             // one press picks the candle up: it follows the pointer at once, so press and drag in one go
             onMove(e)
@@ -719,6 +760,17 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
 
       <div className={`blackout ${blackout ? 'is-on' : ''}`} aria-hidden="true" />
 
+      {(phase === 'play' || phase === 'memorise') && (
+        <button type="button" className={`music-tool ${musicOn ? '' : 'is-off'}`} aria-pressed={musicOn} onClick={e => { e.stopPropagation(); toggleMusic() }}
+          aria-label={musicOn ? 'Music on: turn it off' : 'Music off: turn it on'} title={musicOn ? 'Turn the music off' : 'Turn the music on'}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 17.5V5.5l10-2v12" />
+            <circle cx="6.5" cy="17.5" r="2.5" /><circle cx="16.5" cy="15.5" r="2.5" />
+            {!musicOn && <path className="music-slash" d="M3 3l18 18" />}
+          </svg>
+        </button>
+      )}
+
       {phase === 'play' && (
         <div className={`question-bar ${sideBar ? 'is-side' : ''} ${qFolded ? 'is-folded' : ''}`} onClick={e => { e.stopPropagation(); if (smallScreen() && !(e.target as HTMLElement).closest('button')) setQFolded(true) }} role="region" aria-label="The question">
           <div className="question-top">
@@ -736,10 +788,23 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
               HINT: WHERE TO LOOK (you can read it once)
             </button>
           )}
-          <p className="question-candle">{TOUCH
-            ? 'Too dark to see? Tap the candle at the top left, then drag your finger: its light follows it. Tap things to look at them.'
-            : 'Too dark to see? Pick up the candle at the top left [C]: its light follows your mouse, and you can still click everything.'}</p>
-          <button type="button" className="lock-turn answer-button" onClick={openAnswer} disabled={answerOpen}>
+          {guide === 'candle' ? (
+            <p className="question-candle ghost-guide-line" role="status" aria-live="polite">
+              <span className="ghost-guide-who">GRANDFATHER'S GHOST</span> {guideText.candle}{' '}
+              <button type="button" className="ghost-guide-ok" onClick={e => { e.stopPropagation(); setGuide('answer') }}>I CAN SEE FINE</button>
+            </p>
+          ) : (
+            <p className="question-candle">{TOUCH
+              ? 'Too dark to see? Tap the candle at the top left, then drag your finger: its light follows it. Tap things to look at them.'
+              : 'Too dark to see? Pick up the candle at the top left [C]: its light follows your mouse, and you can still click everything.'}</p>
+          )}
+          {guide === 'answer' && (
+            <p className="ghost-guide-line" role="status" aria-live="polite">
+              <span className="ghost-guide-who">GRANDFATHER'S GHOST</span> {guideText.answer}{' '}
+              <button type="button" className="ghost-guide-ok" onClick={e => { e.stopPropagation(); finishGuide() }}>GOT IT</button>
+            </p>
+          )}
+          <button type="button" className={`lock-turn answer-button ${guide === 'answer' ? 'is-beckoned' : ''}`} onClick={openAnswer} disabled={answerOpen}>
             ANSWER{kb('A')}
           </button>
           <p className="answer-note">You can look at your answer and step back. Once you press YES, there is no going back.</p>
@@ -951,9 +1016,11 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
       {gameOver && (
         <div className="game-over" role="alert">
           <h1>GAME OVER</h1>
-          <p>The house keeps what it catches.</p>
+          <p className="game-over-line">{deathNote?.line ?? 'The house keeps what it catches.'}</p>
+          {deathNote?.count && <p className="game-over-count">{deathNote.count}</p>}
           <p className="game-over-restart">You will start Level {levelId} again from Stage 1.</p>
           <p className="game-over-answer">The answer was <b>{answerText(run.answer)}</b>. {run.explain}</p>
+          {deathNote && <p className="game-over-tip">{deathNote.tip}</p>}
         </div>
       )}
 
@@ -980,6 +1047,18 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
         .torch-cursor .candle-flame { width: .75rem; height: 1.1875rem; margin-left: -.375rem; bottom: .375rem; }
         .torch-cursor::after { content: ''; position: absolute; left: -.3125rem; top: -.375rem; width: .625rem; height: 1.625rem; border-radius: 2px; background: linear-gradient(90deg, #cdbd96, #f5ecd2 45%, #a8966c); }
         .question-candle { margin: .25rem 0 0; font-size: .75rem; color: #f0c27a; }
+        /* Grandfather's ghost: a whisper in spectral blue (the supernatural colour), once per browser */
+        .ghost-guide-line { margin: .375rem 0 0; font: italic .8125rem Georgia, serif; color: #b9e6ff; text-shadow: 0 0 .5rem rgba(110, 190, 255, .7);
+          animation: ghostIn 1.2s ease both; }
+        .question-candle.ghost-guide-line { font-size: .8125rem; color: #b9e6ff; }
+        .ghost-guide-who { font: normal .75rem Georgia, serif; letter-spacing: .12em; color: #7fc4ff; margin-right: .25rem; }
+        .ghost-guide-ok { font: .75rem Georgia, serif; letter-spacing: .08em; color: #b9e6ff; background: transparent; cursor: pointer;
+          border: 1px solid rgba(127, 196, 255, .6); border-radius: 3px; padding: .125rem .5rem; margin-left: .25rem; }
+        .ghost-guide-ok:hover { color: #fff; border-color: #b9e6ff; }
+        .candle-tool.is-beckoned, .answer-button.is-beckoned { animation: ghostBeckon 1.8s ease-in-out infinite; }
+        @keyframes ghostIn { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
+        @keyframes ghostBeckon { 50% { box-shadow: 0 0 1.25rem rgba(110, 190, 255, .75); } }
+        @media (prefers-reduced-motion: reduce) { .ghost-guide-line, .candle-tool.is-beckoned, .answer-button.is-beckoned { animation: none; } }
         .hall-skip {
           position: absolute; right: clamp(1.125rem, 3vw, 2.75rem); bottom: clamp(1.125rem, 4vh, 2.5rem); z-index: 20;
           font: .75rem Georgia, serif; letter-spacing: .2em; color: rgba(243, 233, 215, .7);
@@ -1024,6 +1103,15 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
           text-shadow: 0 0 .75rem rgba(240, 150, 60, .5); }
         .answer-clock.is-low { color: #e0453a; animation: pulse .6s ease-in-out infinite; }
 
+        /* the music switch: a small note at the bottom left; struck through when off */
+        .music-tool { position: absolute; left: clamp(1.125rem, 3vw, 2.75rem); bottom: clamp(1.125rem, 4vh, 2.5rem); z-index: 20; width: 2.5rem; height: 2.5rem;
+          display: grid; place-items: center; padding: 0; cursor: pointer; border-radius: 50%; background: rgba(10, 12, 12, .5); border: 1px solid rgba(236, 210, 160, .35); }
+        .music-tool svg { width: 1.25rem; height: 1.25rem; fill: none; stroke: #f0b356; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .music-tool circle { fill: #f0b356; }
+        .music-tool.is-off svg { stroke: rgba(236, 226, 205, .55); }
+        .music-tool.is-off circle { fill: rgba(236, 226, 205, .55); }
+        .music-tool .music-slash { stroke: #e0453a; stroke-width: 2; }
+        .music-tool:hover, .music-tool:focus-visible { border-color: rgba(240, 179, 86, .8); }
         .s1-time { font-size: .9375rem; letter-spacing: .12em; font-variant-numeric: tabular-nums; }
         .s1-time.is-low { color: #e0453a; animation: pulse 1s ease-in-out infinite; }
         @keyframes pulse { 50% { opacity: .55; } }
@@ -1207,7 +1295,8 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
           /* a panel open over the room: it has the screen to itself (the answer panel repeats the question) */
           .hall-stage.has-panel .question-bar { display: none; }
           .question-bar.is-folded .question-text, .question-bar.is-folded .question-kind, .question-bar.is-folded .question-candle,
-          .question-bar.is-folded .hint-button { display: none; }
+          .question-bar.is-folded .hint-button, .question-bar.is-folded .ghost-guide-line { display: none; }
+          .ghost-guide-line, .question-candle.ghost-guide-line, .ghost-guide-who, .ghost-guide-ok { font-size: .6875rem !important; }
           /* folded: one line, the clock, the journal, SHOW QUESTION and ANSWER side by side */
           .question-bar.is-folded { display: flex; align-items: center; justify-content: center; gap: .5rem; padding: .25rem .625rem; }
           .question-bar.is-folded .answer-button { margin-top: 0; }
@@ -1265,6 +1354,9 @@ export function HallStage({ progress, onSave, onExit, guest = false, onNextLevel
         .game-over p { margin: .375rem 0 0; font-style: italic; color: #e9cfc4; text-shadow: 0 0 .625rem #000; animation: fadeIn 2s ease 1s both; }
         .game-over .game-over-restart { color: #f0b356; font-style: normal; letter-spacing: .06em; animation-delay: 1.4s; }
         .game-over .game-over-answer { max-width: 38.75rem; font-size: .9375rem; animation-delay: 1.8s; }
+        /* GAME OVER is up for 4.25 s: the remark and the tip fade in quickly so both can be read */
+        .game-over .game-over-count { font-size: .875rem; color: #c9b3a8; animation-duration: .8s; animation-delay: 1.2s; }
+        .game-over .game-over-tip { font-size: .875rem; font-style: normal; color: #f0c27a; animation-duration: .8s; animation-delay: 1.6s; }
         .game-over-answer b { color: #f0b356; font-weight: normal; font-style: normal; letter-spacing: .06em; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>

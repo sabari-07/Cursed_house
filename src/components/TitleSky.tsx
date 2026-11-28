@@ -14,12 +14,67 @@ const MOON = { x: 0.86, y: 0.17 }
 /** The painting's size, and where its witch was painted (her sprite's top left, painting px). */
 const ART = { w: 1672, h: 941 }
 export const WITCH_SPRITE = { url: '/landing/title-witch.png', x: 1398, y: 84, w: 144, h: 94 }
-/** Her flight: one wide loop over the whole painting (painting px): left along the top of the sky, down past the lantern tree, back right low over the graveyard, up to the moon. One lap in LAP seconds. */
-const LOOP = { cx: 860, cy: 300, rx: 720, ry: 210 }, LAP = 10
+/**
+ * Her flight (painting px, centre of the sprite): she never turns round in
+ * view. She leaves the moon flying left, swoops down (growing a little as she
+ * comes nearer) and crosses the pale mist below the title (y about 350, where
+ * her dark shape stands out; the top of the sky is dark and cropped on wide
+ * screens) and out past the left edge; out of sight she turns, and comes back
+ * in from the left, low and nearer (larger, so faster on screen) over the
+ * graveyard, rising towards the moon as she goes out past the right edge. Then
+ * the same again, from the right. She tilts with her path. TURN_S: the time she
+ * is out of sight between passes.
+ */
+const HIGH = { speed: 380, near: 1, cruise: 350, cruiseNear: 1.2, swoop: 0.3 }
+const LOW = { speed: 480, near: 1.3, y: (u: number) => 480 + 40 * Math.sin(Math.PI * u) - 60 * u }
+const TURN_S = 0.7
+
+const smooth = (v: number) => { const x = Math.min(1, Math.max(0, v)); return x * x * (3 - 2 * x) }
+
+export interface WitchPose { x: number; y: number; near: number; /** heading: < 0 left, > 0 right */ vx: number; /** dy/dx of her path */ slope: number }
+
+/**
+ * Where she is t seconds into the card (painting px), given the painting x at
+ * the screen's left and right edges and the painting y at its top; null while
+ * she is out of sight, turning.
+ */
+export function witchFlight(t: number, left: number, right: number, top = 0): WitchPose | null {
+  const x0 = WITCH_SPRITE.x + WITCH_SPRITE.w / 2, y0 = WITCH_SPRITE.y + WITCH_SPRITE.h / 2
+  // fully past an edge: half her (scaled) width, plus room for the tilt and the glow
+  const outL = (near: number) => left - (WITCH_SPRITE.w / 2) * near - 30
+  const outR = (near: number) => right + (WITCH_SPRITE.w / 2) * near + 30
+  const high = (from: number, s: number): WitchPose => {
+    const to = outL(HIGH.cruiseNear), u = s / ((from - to) / HIGH.speed)
+    // the swoop: from the moon's height down to the cruise over the first part of the pass;
+    // never above the visible top of the screen (wide screens crop the top of the painting)
+    const yAt = (k: number) => Math.max(top + 80, y0 + (HIGH.cruise - y0) * smooth(k / HIGH.swoop))
+    const e = 0.002
+    return {
+      x: from + (to - from) * u, y: yAt(u), near: HIGH.near + (HIGH.cruiseNear - HIGH.near) * smooth(u / HIGH.swoop), vx: -1,
+      slope: (yAt(u + e) - yAt(u - e)) / ((to - from) * 2 * e),
+    }
+  }
+  const low = (s: number): WitchPose => {
+    const from = outL(LOW.near), to = outR(LOW.near), u = s / ((to - from) / LOW.speed)
+    return { x: from + (to - from) * u, y: LOW.y(u), near: LOW.near, vx: 1, slope: (40 * Math.PI * Math.cos(Math.PI * u) - 60) / (to - from) }
+  }
+  const highS = (from: number) => (from - outL(HIGH.cruiseNear)) / HIGH.speed
+  const lowS = (outR(LOW.near) - outL(LOW.near)) / LOW.speed
+  // the first pass starts where she was painted
+  const first = highS(x0)
+  if (t < first) return high(x0, Math.max(0, t))
+  // then, for ever: turn, low pass to the right, turn, high pass to the left (from beyond the right edge)
+  const fromR = outR(HIGH.near), again = highS(fromR)
+  let s = (t - first) % (TURN_S + lowS + TURN_S + again)
+  if ((s -= TURN_S) < 0) return null
+  if (s < lowS) return low(s)
+  if ((s -= lowS + TURN_S) < 0) return null
+  return high(fromR, s)
+}
 
 interface Bat { a: number; r: number; ry: number; speed: number; size: number; phase: number; cx: number; cy: number; flap: number }
 
-const TOUCH = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
+const TOUCH = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches
 const rnd = (k: number) => { const v = Math.sin(k * 12.9898 + 78.233) * 43758.5453; return v - Math.floor(v) }
 
 /**
@@ -150,24 +205,23 @@ export function TitleSky() {
       }
 
       // ── the painting's witch: she starts exactly where she was painted, then
-      // flies a slow loop round the moon (left along the top, right along the bottom)
+      // crosses the sky right to left, turns out of sight, and crosses back left to right
       if (witch.complete && witch.naturalWidth) {
         const sc = Math.max(w / ART.w, h / ART.h), ox = (w - ART.w * sc) / 2, oy = (h - ART.h * sc) / 2
-        const a0 = Math.atan2((WITCH_SPRITE.y + WITCH_SPRITE.h / 2 - LOOP.cy) / LOOP.ry, (WITCH_SPRITE.x + WITCH_SPRITE.w / 2 - LOOP.cx) / LOOP.rx)
-        const a = a0 - (reduced ? 0 : (Math.PI * 2 * t) / LAP)
-        const loop = (k: number) => [LOOP.cx + LOOP.rx * Math.cos(k), LOOP.cy + LOOP.ry * Math.sin(k)]
-        const [lx, ly] = loop(a), [sx, sy] = loop(a0)
-        const vx = LOOP.rx * Math.sin(a)                         // her heading (sign only)
-        const px = WITCH_SPRITE.x + (lx - sx), py = WITCH_SPRITE.y + (ly - sy) + Math.sin(t * 2.1) * 2.5
-        const near = 1 + 0.35 * (Math.sin(a) + 1) / 2                  // larger as she swoops low and near
-        const dw = WITCH_SPRITE.w * sc * near, dh = WITCH_SPRITE.h * sc * near
-        g.save()
-        g.translate(ox + (px + WITCH_SPRITE.w / 2) * sc, oy + (py + WITCH_SPRITE.h / 2) * sc)
-        g.rotate(Math.cos(a) * 0.08 + Math.sin(t * 2.1) * 0.02)
-        if (vx > 0) g.scale(-1, 1)                                    // she faces the way she flies
-        if (!TOUCH) { g.shadowColor = 'rgba(200, 40, 30, .55)'; g.shadowBlur = 4 * dpr }   // a canvas blur every frame is slow on phones
-        g.drawImage(witch, -dw / 2, -dh / 2, dw, dh)
-        g.restore()
+        const f = reduced ? { x: WITCH_SPRITE.x + WITCH_SPRITE.w / 2, y: WITCH_SPRITE.y + WITCH_SPRITE.h / 2, near: 1, vx: -1, slope: 0 }
+          : witchFlight(t, -ox / sc, (w - ox) / sc, -oy / sc)
+        if (f) {
+          const dw = WITCH_SPRITE.w * sc * f.near, dh = WITCH_SPRITE.h * sc * f.near
+          const bob = reduced ? 0 : Math.sin(t * 2.1)
+          g.save()
+          g.translate(ox + f.x * sc, oy + (f.y + bob * 2.5) * sc)
+          // she tilts with her arc (nose down as she dips, up as she climbs), and sways a little
+          g.rotate(Math.atan(f.slope) * 0.8 + bob * 0.02)
+          if (f.vx > 0) g.scale(-1, 1)                                  // the sprite faces left; mirrored when she flies right
+          if (!TOUCH) { g.shadowColor = 'rgba(200, 40, 30, .55)'; g.shadowBlur = 4 * dpr }   // a canvas blur every frame is slow on phones
+          g.drawImage(witch, -dw / 2, -dh / 2, dw, dh)
+          g.restore()
+        }
       }
     }
     raf = requestAnimationFrame(frame)

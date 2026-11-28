@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AccountError, MIN_PASSWORD, ONLINE, resetPassword, signIn, signUp, type Account } from '../game/accounts'
+import { houseSays, ONE_MORE_TRY, PASSWORDS_DIFFER, SHUT_OUT } from '../game/houseVoice'
 import type { LandingScene } from '../scenes/LandingScene'
 
 export type AccountMode = 'signin' | 'signup' | 'reset'
@@ -71,7 +72,7 @@ export function AccountPanel({ onDone, onClose, mode: firstMode = 'signin', scen
     if (busy) return
     setError(null)
     if (mode !== 'signin' && password !== confirm) {
-      setError('The two passwords do not match.')
+      setError(PASSWORDS_DIFFER)
       return
     }
     setBusy(true)
@@ -82,12 +83,13 @@ export function AccountPanel({ onDone, onClose, mode: firstMode = 'signin', scen
         onDone(a)
       } else onDone(mode === 'reset' ? await resetPassword(name, password, code) : await signIn(name, password))
     } catch (err) {
-      setError(err instanceof AccountError ? err.message : 'Something went wrong. Try again.')
+      // every error is said by the house, picked by its code (the same offline and online)
+      const said = houseSays(err instanceof AccountError ? err.code : undefined)
+      setError(said)
       if (mode === 'signin' && err instanceof AccountError && err.code === 'BadCredentials') {
         wrong()
         setPassword('')
-        if (tries.current >= MAX_TRIES) setError('Wrong again. The house shuts you out.')
-        else setError(`${err.message} One more wrong try and this box closes.`)
+        setError(tries.current >= MAX_TRIES ? SHUT_OUT : `${said} ${ONE_MORE_TRY}`)
       }
     } finally {
       setBusy(false)

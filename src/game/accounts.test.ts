@@ -145,15 +145,33 @@ describe('leaderboard (Property 5: a deterministic total order)', () => {
 })
 
 describe('guest play', () => {
-  it('plays without an account, keeps progress in this browser, and stays off the leaderboard', () => {
+  it('plays without an account, keeps progress for this visit only, and stays off the leaderboard', () => {
     const g = startGuest()
     expect(isGuest(g)).toBe(true)
     expect(isGuest()).toBe(true)
+    expect(g.progress).toEqual(freshProgress())
     const won = { ...freshProgress(), level: 2 as const, treasures: ['gold-watch' as const], levelTimes: { L1: 400 } }
     saveProgress(won)
     expect(current()?.progress).toMatchObject({ level: 2, treasures: ['gold-watch'] })
+    expect(localStorage.getItem(GUEST_KEY)).toBeNull()
     expect(mergePlayers([])).toEqual([])
     expect(localStorage.getItem(USERS_KEY)).toBeNull()
+  })
+
+  it('a new guest game starts from the beginning, even after progress was made', () => {
+    startGuest()
+    saveProgress({ ...freshProgress(), stage: 4 })
+    expect(current()?.progress.stage).toBe(4)
+    expect(startGuest().progress).toEqual(freshProgress())
+    saveProgress({ ...freshProgress(), level: 2 })
+    signOut()
+    expect(startGuest().progress).toEqual(freshProgress())
+  })
+
+  it('ignores and clears a guest save left by an older build', () => {
+    localStorage.setItem(GUEST_KEY, JSON.stringify({ ...freshProgress(), stage: 3 }))
+    expect(startGuest().progress).toEqual(freshProgress())
+    expect(localStorage.getItem(GUEST_KEY)).toBeNull()
   })
 
   it('carries what a guest won into the account they create, then forgets the guest save', async () => {
