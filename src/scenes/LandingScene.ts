@@ -111,8 +111,15 @@ const PUMPKIN_GUTTER_EVERY = { base: 2.5, spread: 3.5 }
 const SNUFF_PUMPKIN = 2
 /** Arjun's feet height (painting px) on the walk at which that flame goes out. */
 const SNUFF_AT_Y = 650
-/** The flame going out: [seconds after it starts, light level]; a last flare, then out. */
-const SNUFF_KEYS: Array<[number, number]> = [[0, 1.15], [0.12, 0.55], [0.2, 0.85], [0.3, 0.2], [0.42, 0]]
+/**
+ * The flame as Arjun passes: [seconds after it starts, light level, times its usual flicker].
+ * A last flare and it goes out; about a second dark; then the wick catches again (a sputter,
+ * a flare) and it settles back into its usual flicker (the last level is 1, so the hand-off is seamless).
+ */
+const SNUFF_KEYS: Array<[number, number]> = [
+  [0, 1.15], [0.12, 0.55], [0.2, 0.85], [0.3, 0.2], [0.42, 0],
+  [1.4, 0], [1.5, 0.35], [1.58, 0.1], [1.7, 0.6], [1.82, 0.3], [1.98, 1.25], [2.25, 1],
+]
 
 /**
  * Blink cycle of the tree lantern: [seconds into the cycle, light level]. Level 0 is dark,
@@ -1636,7 +1643,7 @@ export class LandingScene {
    * The jack-o'-lanterns flicker like candles: each flame is one value (no spatial noise), so the
    * light never "waves". A steady wobble (about 0.8 to 1.15, its own phase per pumpkin) times a
    * gutter every few seconds (PUMPKIN_GUTTER, down to 0.2 then a flare). Once Arjun's feet pass
-   * SNUFF_AT_Y on the walk, the SNUFF_PUMPKIN flame flares once and goes out for good.
+   * SNUFF_AT_Y on the walk, the SNUFF_PUMPKIN flame flares, goes out for about a second, and catches again.
    */
   private updatePumpkins(t: number, delta: number): void {
     const on = this.uniforms.uPumpOn.value
@@ -1652,13 +1659,14 @@ export class LandingScene {
     if (this.snuffAt === null && this.arjunFeetY <= SNUFF_AT_Y) this.snuffAt = et
     if (this.snuffAt === null) return
     const k = et - this.snuffAt
+    if (k >= SNUFF_KEYS[SNUFF_KEYS.length - 1][0]) return     // relit: back to its usual flicker
     let level = SNUFF_KEYS[0][1]
     for (let j = 1; j < SNUFF_KEYS.length; j++) {
       const [t0, v0] = SNUFF_KEYS[j - 1], [t1, v1] = SNUFF_KEYS[j]
       if (k >= t1) level = v1
       else if (k >= t0) { level = v0 + (v1 - v0) * (k - t0) / (t1 - t0); break }
     }
-    on[SNUFF_PUMPKIN] = level
+    on[SNUFF_PUMPKIN] = level * on[SNUFF_PUMPKIN]
   }
 
   /**
