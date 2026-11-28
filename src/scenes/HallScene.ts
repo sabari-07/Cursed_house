@@ -76,14 +76,13 @@ export const MUSIC = {
   fadeIn: 2.5, fadeOut: 1.2,
   duck: 0.25, duckPre: 0.3, duckPost: 0.6,
 }
-/** The player's music switch, kept in this browser (on unless they turned it off). */
-export const MUSIC_KEY = 'ghostwriter_music_v1'
-export function musicPreferred(): boolean {
-  try { return (JSON.parse(localStorage.getItem(MUSIC_KEY) || 'null') as { on?: boolean } | null)?.on !== false } catch { return true }
-}
-export function setMusicPreferred(on: boolean): void {
-  try { localStorage.setItem(MUSIC_KEY, JSON.stringify({ version: 1, on })) } catch { /* kept for this visit only */ }
-}
+/**
+ * The player's music switch: on by default, so the music plays as each stage starts. Turning it
+ * off lasts for this visit only (it is not saved): a reload has the music on again.
+ */
+let musicChoice = true
+export const musicPreferred = (): boolean => musicChoice
+export function setMusicPreferred(on: boolean): void { musicChoice = on }
 /** The whispers recording is played from 0 for this long only: it grows loud and wordy after 6 s. */
 const WHISPER_KEEP = 6
 
